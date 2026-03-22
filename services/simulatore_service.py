@@ -531,8 +531,9 @@ VRP_FIELDS = [
     "prezzo_acquisto", "data_acquisto",
     "anticipo", "durata_anni", "tasso_interesse", "spese_notarili",
     "aliquota_plusvalenza", "imposta_registro", "imu_annuale",
-    "costo_assicurazione", "tasso_investimento", "rata_mensile",
-    "ricavo_netto", "anni_sostenibilita", "note",
+    "costo_assicurazione", "tasso_investimento",
+    "reddito_annuo", "addizionale_regionale", "addizionale_comunale",
+    "rata_mensile", "ricavo_netto", "anni_sostenibilita", "note",
 ]
 
 
