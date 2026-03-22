@@ -266,6 +266,37 @@
             </div>
         </div>
 
+        <!-- Third row: Break-even, TIR, Diff vs Investito -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 mb-4 border-start border-info border-3">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small"><i class="bi bi-bullseye me-1"></i>Break-Even vs Investimento</p>
+                        <h4 class="mb-0 fw-bold" id="vrpBreakEven">--</h4>
+                        <small class="text-muted" id="vrpBreakEvenNote"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 mb-4 border-start border-primary border-3">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small"><i class="bi bi-percent me-1"></i>TIR (Tasso Interno di Rendimento)</p>
+                        <h4 class="mb-0 fw-bold" id="vrpTir">--</h4>
+                        <small class="text-muted" id="vrpTirNote">Rendimento annuo dell'operazione VRP</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 mb-4 border-start border-warning border-3">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small"><i class="bi bi-arrow-left-right me-1"></i>Diff. VRP vs Investimento Finale</p>
+                        <h4 class="mb-0 fw-bold" id="vrpDiffVsInvestito">--</h4>
+                        <small class="text-muted" id="vrpDiffVsInvestitoNote"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Charts -->
         <div class="row g-3 mb-4">
             <div class="col-lg-6">
@@ -618,6 +649,41 @@
         document.getElementById('vrpTassePlusvalenza').textContent = PM.Fmt.currency(r.imposta_plusvalenza);
         document.getElementById('vrpTassePlusvalenza').className = 'mb-0 fw-bold ' + (r.imposta_plusvalenza > 0 ? 'text-danger' : 'text-success');
 
+        // Break-even
+        var beEl = document.getElementById('vrpBreakEven');
+        var beNote = document.getElementById('vrpBreakEvenNote');
+        if (r.break_even_anno !== null && r.break_even_anno !== undefined) {
+            beEl.textContent = 'Anno ' + r.break_even_anno;
+            beEl.className = 'mb-0 fw-bold text-info';
+            beNote.textContent = 'VRP supera l\'investimento dopo ' + r.break_even_anno + ' anni';
+        } else {
+            beEl.textContent = 'Mai';
+            beEl.className = 'mb-0 fw-bold text-danger';
+            beNote.textContent = 'La VRP non supera mai l\'investimento alternativo';
+        }
+
+        // TIR
+        var tirEl = document.getElementById('vrpTir');
+        var tirNote = document.getElementById('vrpTirNote');
+        if (r.tir !== null && r.tir !== undefined) {
+            tirEl.textContent = (r.tir >= 0 ? '+' : '') + r.tir.toFixed(2) + '%';
+            tirEl.className = 'mb-0 fw-bold ' + (r.tir >= 0 ? 'text-success' : 'text-danger');
+            tirNote.textContent = 'Rendimento annuo composto dell\'operazione VRP';
+        } else {
+            tirEl.textContent = 'N/A';
+            tirEl.className = 'mb-0 fw-bold text-muted';
+            tirNote.textContent = 'Calcolo non possibile';
+        }
+
+        // Diff vs Investito
+        var divEl = document.getElementById('vrpDiffVsInvestito');
+        var divNote = document.getElementById('vrpDiffVsInvestitoNote');
+        divEl.textContent = PM.Fmt.currency(r.differenza_vrp_vs_investito);
+        divEl.className = 'mb-0 fw-bold ' + colorValue(r.differenza_vrp_vs_investito);
+        divNote.textContent = r.differenza_vrp_vs_investito >= 0
+            ? 'La VRP rende di più dell\'investimento alternativo'
+            : 'L\'investimento alternativo rende di più della VRP';
+
         document.getElementById('vrpTotaleIrpef').textContent = PM.Fmt.currency(r.totale_tasse_reddito);
         var irpefNote = 'IRPEF: ' + PM.Fmt.currency(r.totale_irpef) + ' | Add.: ' + PM.Fmt.currency(r.totale_addizionali);
         document.getElementById('vrpIrpefNote').textContent = irpefNote;
@@ -651,17 +717,47 @@
         var confVrp = confronto.map(function(c) { return c.cumulato_vrp; });
         var confInv = confronto.map(function(c) { return c.cumulato_investimento; });
 
+        var confDiff = confronto.map(function(c) { return c.differenza; });
+
         var traceConf = [
             { x: confAnni, y: confVrp, name: 'VRP Cumulato', type: 'scatter', mode: 'lines+markers',
-              line: { color: '#198754', width: 2 }, marker: { size: 6 } },
-            { x: confAnni, y: confInv, name: 'Vendita Immediata Investita', type: 'scatter', mode: 'lines+markers',
-              line: { color: '#f28e2b', width: 2 }, marker: { size: 6 } }
+              line: { color: '#198754', width: 2.5 }, marker: { size: 6 },
+              hovertemplate: 'VRP: %{y:,.0f} \u20ac<extra></extra>' },
+            { x: confAnni, y: confInv, name: 'Vendita Investita', type: 'scatter', mode: 'lines+markers',
+              line: { color: '#f28e2b', width: 2.5 }, marker: { size: 6 },
+              hovertemplate: 'Investita: %{y:,.0f} \u20ac<extra></extra>' },
+            { x: confAnni, y: confDiff, name: 'Differenza', type: 'bar',
+              marker: { color: confDiff.map(function(v) { return v >= 0 ? 'rgba(25,135,84,0.3)' : 'rgba(220,53,69,0.3)'; }) },
+              yaxis: 'y2',
+              hovertemplate: 'Diff: %{y:,.0f} \u20ac<extra></extra>' }
         ];
+
+        // Break-even annotation
+        var confAnnotations = [];
+        if (r.break_even_anno !== null && r.break_even_anno !== undefined) {
+            confAnnotations.push({
+                x: 'Anno ' + r.break_even_anno,
+                y: confronto[r.break_even_anno] ? confronto[r.break_even_anno].cumulato_vrp : 0,
+                text: 'Break-Even',
+                showarrow: true,
+                arrowhead: 2,
+                arrowcolor: '#0dcaf0',
+                font: { color: '#0dcaf0', size: 12, family: 'Arial Black' },
+                bgcolor: 'rgba(13,202,240,0.1)',
+                bordercolor: '#0dcaf0',
+                borderwidth: 1,
+                borderpad: 4
+            });
+        }
 
         var layoutConf = getPlotlyLayout();
         layoutConf.xaxis = Object.assign(layoutConf.xaxis || {}, { title: '' });
         layoutConf.yaxis = Object.assign(layoutConf.yaxis || {}, { title: 'Valore (\u20ac)', tickformat: ',.0f' });
+        layoutConf.yaxis2 = { title: 'Differenza (\u20ac)', overlaying: 'y', side: 'right', tickformat: ',.0f',
+                              gridcolor: 'rgba(0,0,0,0)' };
         layoutConf.legend = { orientation: 'h', y: -0.15 };
+        layoutConf.hovermode = 'x unified';
+        layoutConf.annotations = confAnnotations;
         Plotly.newPlot('chartVrpConfronto', traceConf, layoutConf, plotlyConfig);
 
         // --- Table: Cash Flow ---

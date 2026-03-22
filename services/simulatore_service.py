@@ -360,6 +360,58 @@ def simula_vendita_riserva(params):
             ricavo_netto_vrp - valore_investito_finale, 2
         )
 
+        # --- Break-even point: when VRP cumulated >= invested cumulated ---
+        break_even_anno = None
+        for c in confronto:
+            if c["cumulato_vrp"] >= c["cumulato_investimento"] and c["anno"] > 0:
+                break_even_anno = c["anno"]
+                break
+        # If VRP never catches up, no break-even
+        if break_even_anno is None and confronto:
+            # Check if VRP is ahead at any point
+            for c in confronto[1:]:
+                if c["cumulato_vrp"] >= c["cumulato_investimento"]:
+                    break_even_anno = c["anno"]
+                    break
+
+        # Add difference column to confronto
+        for c in confronto:
+            c["differenza"] = round(c["cumulato_vrp"] - c["cumulato_investimento"], 2)
+
+        # --- TIR (IRR) calculation ---
+        # Cash flows: year 0 = -ricavo_immediato (opportunity cost of not selling immediately)
+        # years 1..N = net cash flow from VRP each year
+        tir = None
+        try:
+            irr_flows = [-ricavo_immediato]
+            for anno in range(1, durata_anni + 1):
+                cf = next((c for c in cash_flow_annuale if c["anno"] == anno), None)
+                irr_flows.append(cf["flusso_netto"] if cf else 0)
+
+            # Newton-Raphson IRR calculation
+            def npv(rate, flows):
+                return sum(f / (1 + rate) ** t for t, f in enumerate(flows))
+
+            def npv_deriv(rate, flows):
+                return sum(-t * f / (1 + rate) ** (t + 1) for t, f in enumerate(flows))
+
+            guess = 0.05
+            for _ in range(200):
+                n = npv(guess, irr_flows)
+                d = npv_deriv(guess, irr_flows)
+                if abs(d) < 1e-12:
+                    break
+                new_guess = guess - n / d
+                if abs(new_guess - guess) < 1e-10:
+                    guess = new_guess
+                    break
+                guess = new_guess
+
+            if abs(npv(guess, irr_flows)) < 1:
+                tir = round(guess * 100, 2)
+        except Exception:
+            tir = None
+
         return {
             "riepilogo": {
                 "valore_vendita": round(valore_vendita, 2),
@@ -383,6 +435,8 @@ def simula_vendita_riserva(params):
                 "differenza_vrp_vs_immediata": differenza_vrp_vs_immediata,
                 "valore_investito_finale": valore_investito_finale,
                 "differenza_vrp_vs_investito": differenza_vrp_vs_investito,
+                "break_even_anno": break_even_anno,
+                "tir": tir,
             },
             "piano_ammortamento": piano_ammortamento,
             "cash_flow_annuale": cash_flow_annuale,
