@@ -25,6 +25,11 @@ def create_app():
     def inject_i18n():
         return {'t': translations}
 
+    @app.context_processor
+    def inject_now():
+        from datetime import datetime
+        return {'now': datetime.now}
+
     # Template filters
     @app.template_filter('currency')
     def currency_filter(value):

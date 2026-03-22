@@ -73,10 +73,12 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% set today = now().strftime('%Y-%m-%d') if now is defined else '' %}
                         {% for liq in records %}
-                        <tr data-id="{{ liq.id }}">
+                        {% set is_future = liq.data|date > today if today else false %}
+                        <tr data-id="{{ liq.id }}" class="{{ 'text-info opacity-75' if is_future }}">
                             <td>{{ liq.anno }}</td>
-                            <td>{{ liq.data|date }}</td>
+                            <td>{{ liq.data|date }}{% if is_future %} <i class="bi bi-clock-history small"></i>{% endif %}</td>
                             <td>{{ liq.mese }}</td>
                             <td class="text-end">{{ liq.liquidita_entrata|currency }}</td>
                             <td class="text-end">{{ liq.accumulo_bsf|currency }}</td>
