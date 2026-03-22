@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 
 from services.patrimonio_service import (
     get_all_patrimonio,
+    get_latest_patrimonio,
     create_patrimonio,
     update_patrimonio,
     delete_patrimonio,
@@ -95,15 +96,26 @@ def valori_live():
                 "SELECT COALESCE(SUM(valore_rimborso_netto), 0) as totale FROM bfp"
             ).fetchone()
         bfp_val = row["totale"] if row else 0
-        db.close()
 
-        # Latest Fondo Pensione
+        # Latest Fondo Pensione (from dedicated table, fallback to patrimonio)
         fp = get_latest_fp()
         fp_val = fp.get("valore", 0) if isinstance(fp, dict) and "error" not in fp else 0
+        if not fp_val:
+            row = db.execute(
+                "SELECT fondo_pensione FROM patrimonio WHERE fondo_pensione > 0 ORDER BY data DESC LIMIT 1"
+            ).fetchone()
+            fp_val = row[0] if row else 0
 
-        # Latest TFR
+        # Latest TFR (from dedicated table, fallback to patrimonio)
         tfr = get_latest_tfr()
         tfr_val = tfr.get("valore_netto", 0) if isinstance(tfr, dict) and "error" not in tfr else 0
+        if not tfr_val:
+            row = db.execute(
+                "SELECT tfr_netto FROM patrimonio WHERE tfr_netto > 0 ORDER BY data DESC LIMIT 1"
+            ).fetchone()
+            tfr_val = row[0] if row else 0
+
+        db.close()
 
         # Fineco values (ETF, BTP, CD/XEON)
         fineco_etf = get_parametro("fineco_etf")
