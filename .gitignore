@@ -1,0 +1,31 @@
+# Database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Uploaded/exported files
+data/uploads/
+data/exports/
+
+# Personal Excel files
+xlsbase/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Excel temp files
+~$*

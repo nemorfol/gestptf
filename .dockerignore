@@ -1,0 +1,9 @@
+data/
+xlsbase/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.vscode/
+.idea/
+*.md

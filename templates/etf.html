@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}ETF - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>ETF</h4>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="etfShowAll" onchange="toggleInattivi()">
+                <label class="form-check-label small" for="etfShowAll">Mostra venduti</label>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#etfModal" onclick="resetEtfForm()">
+                <i class="bi bi-plus-lg me-1"></i> Nuovo ETF
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale Investito</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_investito|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">N. Posizioni</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_count if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Lista ETF
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="etfTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>ISIN</th>
+                            <th>Nome</th>
+                            <th>Data Acquisto</th>
+                            <th class="text-end">Quantit&agrave;</th>
+                            <th class="text-end">Prezzo Acquisto</th>
+                            <th class="text-end">Commissioni</th>
+                            <th class="text-end">Costo Totale</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for etf in records %}
+                        <tr data-id="{{ etf.id }}" class="{{ 'table-secondary opacity-50' if not etf.attivo else '' }}">
+                            <td>{{ etf.isin }}</td>
+                            <td>
+                                {{ etf.nome }}
+                                {% if not etf.attivo %}<span class="badge bg-secondary ms-1">Venduto</span>{% endif %}
+                            </td>
+                            <td>{{ etf.data_acquisto }}</td>
+                            <td>{{ etf.quantita }}</td>
+                            <td class="text-end">{{ etf.prezzo_acquisto|currency }}</td>
+                            <td class="text-end">{{ etf.commissioni|currency }}</td>
+                            <td class="text-end">{{ etf.costo_totale|currency }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn {{ 'btn-outline-secondary' if etf.attivo else 'btn-outline-success' }}"
+                                            onclick="toggleAttivo('etf', {{ etf.id }}, {{ 0 if etf.attivo else 1 }})"
+                                            title="{{ 'Segna come venduto' if etf.attivo else 'Riattiva' }}">
+                                        <i class="bi {{ 'bi-eye-slash' if etf.attivo else 'bi-eye' }}"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-edit" onclick='editEtf({{ etf|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-delete" onclick="deleteEtf({{ etf.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Riepilogo per Titolo -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-collection me-1"></i> Riepilogo per Titolo
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ISIN</th>
+                            <th>Nome</th>
+                            <th class="text-end">Quantit&agrave; Totale</th>
+                            <th class="text-end">Costo Totale</th>
+                            <th class="text-end">Peso %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in riepilogo %}
+                        <tr>
+                            <td>{{ r.isin }}</td>
+                            <td>{{ r.nome }}</td>
+                            <td class="text-end">{{ r.totale_quantita }}</td>
+                            <td class="text-end">{{ r.totale_costo|currency }}</td>
+                            <td class="text-end">{{ '{:.2f}'.format(r.peso_pct) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal ETF -->
+<div class="modal fade" id="etfModal" tabindex="-1" aria-labelledby="etfModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="etfModalLabel">Nuovo ETF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="etfForm">
+                    <input type="hidden" id="etfId" name="id">
+                    <div class="mb-3">
+                        <label for="etfIsin" class="form-label">ISIN</label>
+                        <input type="text" class="form-control" id="etfIsin" name="isin" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="etfNome" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="etfNome" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="etfDataAcquisto" class="form-label">Data Acquisto</label>
+                        <input type="date" class="form-control" id="etfDataAcquisto" name="data_acquisto" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="etfQuantita" class="form-label">Quantit&agrave;</label>
+                            <input type="number" step="any" class="form-control" id="etfQuantita" name="quantita" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="etfPrezzoAcquisto" class="form-label">Prezzo Acquisto</label>
+                            <input type="number" step="0.0001" class="form-control" id="etfPrezzoAcquisto" name="prezzo_acquisto" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="etfCommissioni" class="form-label">Commissioni</label>
+                        <input type="number" step="0.01" class="form-control" id="etfCommissioni" name="commissioni" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveEtf()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var table = PM.DT.init('#etfTable', {
+        order: [[2, 'desc']],
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    window.resetEtfForm = function() {
+        document.getElementById('etfForm').reset();
+        document.getElementById('etfId').value = '';
+        document.getElementById('etfModalLabel').textContent = 'Nuovo ETF';
+    };
+
+    window.editEtf = function(etf) {
+        document.getElementById('etfId').value = etf.id;
+        document.getElementById('etfIsin').value = etf.isin;
+        document.getElementById('etfNome').value = etf.nome;
+        document.getElementById('etfDataAcquisto').value = etf.data_acquisto;
+        document.getElementById('etfQuantita').value = etf.quantita;
+        document.getElementById('etfPrezzoAcquisto').value = etf.prezzo_acquisto;
+        document.getElementById('etfCommissioni').value = etf.commissioni;
+        document.getElementById('etfModalLabel').textContent = 'Modifica ETF';
+        new bootstrap.Modal(document.getElementById('etfModal')).show();
+    };
+
+    window.saveEtf = function() {
+        var form = document.getElementById('etfForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('etfId').value;
+        var data = {
+            isin: document.getElementById('etfIsin').value,
+            nome: document.getElementById('etfNome').value,
+            data_acquisto: document.getElementById('etfDataAcquisto').value,
+            quantita: parseFloat(document.getElementById('etfQuantita').value),
+            prezzo_acquisto: parseFloat(document.getElementById('etfPrezzoAcquisto').value),
+            commissioni: parseFloat(document.getElementById('etfCommissioni').value) || 0
+        };
+
+        var url = '/etf/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('etfModal')).hide();
+            PM.Toast.show('ETF salvato con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteEtf = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questo ETF?', function() {
+            PM.apiCall('/etf/' + id, 'DELETE').then(function() {
+                PM.Toast.show('ETF eliminato', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+
+    window.toggleAttivo = function(tipo, id, nuovoStato) {
+        PM.apiCall('/' + tipo + '/' + id, 'PUT', { attivo: nuovoStato }).then(function() {
+            PM.Toast.show(nuovoStato ? 'Riattivato' : 'Segnato come venduto', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.toggleInattivi = function() {
+        var show = document.getElementById('etfShowAll').checked;
+        document.querySelectorAll('#etfTable tbody tr.table-secondary').forEach(function(row) {
+            row.style.display = show ? '' : 'none';
+        });
+    };
+
+    // Hide inactive by default
+    toggleInattivi();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Simulatore BTPi - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-graph-up me-2"></i>Simulatore BTPi</h4>
+    </div>
+
+    <!-- Parameter input -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-sliders me-1"></i> Parametri Simulazione
+        </div>
+        <div class="card-body">
+            <form id="btpiForm">
+                <div class="row g-3">
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiValore" class="form-label">Valore Nominale (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="btpiValore" name="valore_nominale"
+                               value="1000">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiQuotazione" class="form-label">Quotazione Attuale</label>
+                        <input type="number" step="0.01" class="form-control" id="btpiQuotazione" name="quotazione"
+                               value="100">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiCoeff" class="form-label">Coeff. Indicizzazione</label>
+                        <input type="number" step="0.000001" class="form-control" id="btpiCoeff" name="coeff_indicizz"
+                               value="1.0">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiInflazione" class="form-label">Inflazione Prevista (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="btpiInflazione" name="inflazione_prevista"
+                               value="{{ parametri.inflazione_prevista.valore if parametri and parametri.inflazione_prevista is defined else 1.4 }}">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiAnnoRimborso" class="form-label">Anno Rimborso</label>
+                        <input type="number" class="form-control" id="btpiAnnoRimborso" name="anno_rimborso"
+                               value="2040">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiAnnoCorrente" class="form-label">Anno Corrente</label>
+                        <input type="number" class="form-control" id="btpiAnnoCorrente" name="anno_corrente"
+                               value="2026">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiImportoNetto" class="form-label">Importo Netto (per rata)</label>
+                        <input type="number" step="0.01" class="form-control" id="btpiImportoNetto" name="importo_netto"
+                               value="">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="btpiSperanzaVita" class="form-label">Speranza di Vita (anni)</label>
+                        <input type="number" class="form-control" id="btpiSperanzaVita" name="speranza_vita_anni"
+                               value="">
+                    </div>
+                    <div class="col-md-4 col-lg-3 d-flex align-items-end">
+                        <button type="button" class="btn btn-primary w-100" onclick="calcolaBtpi()">
+                            <i class="bi bi-play-fill me-1"></i> Calcola Proiezione
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results area -->
+    <div id="btpiResults" style="display:none;">
+        <!-- Summary cards -->
+        <div class="row g-3 mb-4" id="btpiRataSection" style="display:none;">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Importo Netto</p>
+                        <h4 class="mb-0 fw-bold text-primary" id="btpiNettoStimato">—</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Rata Mensile Stimata</p>
+                        <h4 class="mb-0 fw-bold text-success" id="btpiRataMensile">—</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-transparent border-0 fw-semibold">
+                <i class="bi bi-graph-up me-1"></i> Proiezione Valore nel Tempo
+            </div>
+            <div class="card-body">
+                <div id="chartBtpi" style="width:100%;height:400px;"></div>
+            </div>
+        </div>
+
+        <!-- DataTable -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-transparent border-0 fw-semibold">
+                <i class="bi bi-table me-1"></i> Proiezioni Annuali
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="btpiTable" class="table table-striped table-hover align-middle" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Anno</th>
+                                <th class="text-end">Anni al Rimborso</th>
+                                <th class="text-end">Coeff. Indicizzazione</th>
+                                <th class="text-end">Valore Reale</th>
+                                <th class="text-end">Valore Mercato</th>
+                            </tr>
+                        </thead>
+                        <tbody id="btpiTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function getPlotlyTheme() {
+        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: isDark ? '#dee2e6' : '#495057' },
+            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f'],
+            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
+        };
+    }
+
+    function getPlotlyLayout(title) {
+        var theme = getPlotlyTheme();
+        return Object.assign({}, theme, {
+            title: { text: title, font: { size: 14 } },
+            margin: { t: 40, r: 20, b: 40, l: 70 },
+            autosize: true
+        });
+    }
+
+    var plotlyConfig = { responsive: true, displayModeBar: false };
+    var dtInstance = null;
+
+    window.calcolaBtpi = function() {
+        var data = {
+            valore_nominale: parseFloat(document.getElementById('btpiValore').value),
+            quotazione: parseFloat(document.getElementById('btpiQuotazione').value),
+            coeff_indicizz: parseFloat(document.getElementById('btpiCoeff').value),
+            inflazione_prevista: parseFloat(document.getElementById('btpiInflazione').value),
+            anno_rimborso: parseInt(document.getElementById('btpiAnnoRimborso').value),
+            anno_corrente: parseInt(document.getElementById('btpiAnnoCorrente').value)
+        };
+
+        var importoNetto = document.getElementById('btpiImportoNetto').value;
+        var speranzaVita = document.getElementById('btpiSperanzaVita').value;
+        if (importoNetto && speranzaVita) {
+            data.importo_netto = parseFloat(importoNetto);
+            data.speranza_vita_anni = parseFloat(speranzaVita);
+        }
+
+        PM.Loading.show();
+        PM.apiCall('{{ url_for("simulatore_bp.btpi_calcola") }}', 'POST', data).then(function(response) {
+            PM.Loading.hide();
+            renderResults(response);
+        }).catch(function(err) {
+            PM.Loading.hide();
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    function renderResults(response) {
+        document.getElementById('btpiResults').style.display = 'block';
+
+        var proiezioni = response.data || [];
+        var rata = response.rata_mensile;
+
+        // Show rata section if available
+        if (rata) {
+            document.getElementById('btpiRataSection').style.display = 'flex';
+            document.getElementById('btpiNettoStimato').textContent = PM.Fmt.currency(rata.importo_netto || 0);
+            document.getElementById('btpiRataMensile').textContent = PM.Fmt.currency(rata.rata_mensile || 0);
+        } else {
+            document.getElementById('btpiRataSection').style.display = 'none';
+        }
+
+        // Chart
+        var anni = proiezioni.map(function(r) { return r.anno; });
+        var valoriReali = proiezioni.map(function(r) { return r.valore_reale; });
+        var valoriMercato = proiezioni.map(function(r) { return r.valore_mercato; });
+
+        var traces = [
+            {
+                x: anni, y: valoriReali, name: 'Valore Reale',
+                type: 'scatter', mode: 'lines+markers',
+                line: { color: '#4e79a7', width: 2 }
+            },
+            {
+                x: anni, y: valoriMercato, name: 'Valore Mercato',
+                type: 'scatter', mode: 'lines+markers',
+                line: { color: '#f28e2b', width: 2 }
+            }
+        ];
+
+        var layout = getPlotlyLayout('');
+        layout.xaxis = Object.assign(layout.xaxis || {}, { title: 'Anno', dtick: 1 });
+        layout.yaxis = Object.assign(layout.yaxis || {}, { title: 'Valore (\u20ac)', tickprefix: '\u20ac ' });
+        layout.legend = { orientation: 'h', y: -0.2 };
+        Plotly.newPlot('chartBtpi', traces, layout, plotlyConfig);
+
+        // Table
+        var tbody = document.getElementById('btpiTableBody');
+        tbody.innerHTML = '';
+        proiezioni.forEach(function(r) {
+            tbody.innerHTML += '<tr>' +
+                '<td>' + r.anno + '</td>' +
+                '<td class="text-end">' + r.anni_al_rimborso + '</td>' +
+                '<td class="text-end">' + r.coeff_indicizz.toFixed(6) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(r.valore_reale) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(r.valore_mercato) + '</td>' +
+                '</tr>';
+        });
+
+        if (dtInstance) { dtInstance.destroy(); }
+        dtInstance = PM.DT.init('#btpiTable', { paging: false, searching: false, info: false });
+    }
+
+    // Theme toggle
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        setTimeout(function() {
+            if (document.getElementById('btpiResults').style.display !== 'none') {
+                var layout = getPlotlyLayout('');
+                layout.xaxis = Object.assign(layout.xaxis || {}, { title: 'Anno', dtick: 1 });
+                layout.yaxis = Object.assign(layout.yaxis || {}, { title: 'Valore (\u20ac)', tickprefix: '\u20ac ' });
+                layout.legend = { orientation: 'h', y: -0.2 };
+                Plotly.relayout('chartBtpi', layout);
+            }
+        }, 100);
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block title %}Liquidit&agrave; - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-wallet2 me-2"></i>Liquidit&agrave;</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#liqModal" onclick="resetLiqForm()">
+            <i class="bi bi-plus-lg me-1"></i> Nuova Voce
+        </button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale Cash</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_cash|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale CD/XEON</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_cd|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale Liquidit&agrave;</p>
+                    <h5 class="mb-0 fw-bold text-primary">{{ summary.totale_liquidita|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plotly line chart -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-graph-up me-1"></i> Andamento Liquidit&agrave; nel Tempo
+        </div>
+        <div class="card-body">
+            <div id="liqChart" style="height:350px;"></div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Dettaglio Liquidit&agrave;
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="liqTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descrizione</th>
+                            <th class="text-end">Importo</th>
+                            <th class="text-end">Tasso</th>
+                            <th>Scadenza</th>
+                            <th>Data Agg.</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for liq in records %}
+                        <tr data-id="{{ liq.id }}">
+                            <td>
+                                {% if liq.tipo == 'cash' %}
+                                    <span class="badge bg-success">Cash</span>
+                                {% elif liq.tipo == 'cd' %}
+                                    <span class="badge bg-info">CD</span>
+                                {% elif liq.tipo == 'xeon' %}
+                                    <span class="badge bg-primary">XEON</span>
+                                {% elif liq.tipo == 'deposito' %}
+                                    <span class="badge bg-warning text-dark">Deposito</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Altro</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ liq.descrizione or '—' }}</td>
+                            <td class="text-end">{{ liq.importo|currency }}</td>
+                            <td class="text-end">{{ '{:.2f}'.format(liq.tasso) if liq.tasso else '—' }}%</td>
+                            <td>{{ liq.scadenza or '—' }}</td>
+                            <td>{{ liq.data_aggiornamento or '—' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick='editLiq({{ liq|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteLiq({{ liq.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Liquidita -->
+<div class="modal fade" id="liqModal" tabindex="-1" aria-labelledby="liqModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="liqModalLabel">Nuova Voce</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="liqForm">
+                    <input type="hidden" id="liqId" name="id">
+                    <div class="mb-3">
+                        <label for="liqTipo" class="form-label">Tipo</label>
+                        <select class="form-select" id="liqTipo" name="tipo" required>
+                            <option value="cash">Cash</option>
+                            <option value="cd">CD</option>
+                            <option value="xeon">XEON</option>
+                            <option value="deposito">Deposito</option>
+                            <option value="altro">Altro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="liqDescrizione" class="form-label">Descrizione</label>
+                        <input type="text" class="form-control" id="liqDescrizione" name="descrizione">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="liqImporto" class="form-label">Importo</label>
+                            <input type="number" step="0.01" class="form-control" id="liqImporto" name="importo" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="liqTasso" class="form-label">Tasso (%)</label>
+                            <input type="number" step="0.01" class="form-control" id="liqTasso" name="tasso" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="liqScadenza" class="form-label">Scadenza</label>
+                            <input type="date" class="form-control" id="liqScadenza" name="scadenza">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="liqDataAgg" class="form-label">Data Aggiornamento</label>
+                            <input type="date" class="form-control" id="liqDataAgg" name="data_aggiornamento">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="liqNote" class="form-label">Note</label>
+                        <textarea class="form-control" id="liqNote" name="note" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveLiq()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var table = PM.DT.init('#liqTable', {
+        order: [[5, 'desc']],
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    // Plotly line chart - andamento storico (from patrimonio)
+    var storico = {{ storico|tojson }};
+    if (storico.length > 0) {
+        var dates = storico.map(function(r) { return r.data; });
+        var values = storico.map(function(r) { return r.cash; });
+        Plotly.newPlot('liqChart', [{
+            x: dates,
+            y: values,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Liquidit\u00e0',
+            line: { color: '#198754', width: 2 },
+            marker: { size: 6 }
+        }], {
+            margin: { t: 20, r: 30, b: 40, l: 70 },
+            xaxis: { title: 'Data' },
+            yaxis: { title: 'Importo (\u20ac)', tickformat: ',.0f' },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#dee2e6' : '#212529' }
+        }, { responsive: true });
+    } else {
+        document.getElementById('liqChart').innerHTML = '<p class="text-center text-muted py-5">Nessun dato disponibile per il grafico</p>';
+    }
+
+    window.resetLiqForm = function() {
+        document.getElementById('liqForm').reset();
+        document.getElementById('liqId').value = '';
+        document.getElementById('liqModalLabel').textContent = 'Nuova Voce';
+    };
+
+    window.editLiq = function(liq) {
+        document.getElementById('liqId').value = liq.id;
+        document.getElementById('liqTipo').value = liq.tipo || 'cash';
+        document.getElementById('liqDescrizione').value = liq.descrizione || '';
+        document.getElementById('liqImporto').value = liq.importo || 0;
+        document.getElementById('liqTasso').value = liq.tasso || 0;
+        document.getElementById('liqScadenza').value = liq.scadenza || '';
+        document.getElementById('liqDataAgg').value = liq.data_aggiornamento || '';
+        document.getElementById('liqNote').value = liq.note || '';
+        document.getElementById('liqModalLabel').textContent = 'Modifica Voce';
+        new bootstrap.Modal(document.getElementById('liqModal')).show();
+    };
+
+    window.saveLiq = function() {
+        var form = document.getElementById('liqForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('liqId').value;
+        var data = {
+            tipo: document.getElementById('liqTipo').value,
+            descrizione: document.getElementById('liqDescrizione').value,
+            importo: parseFloat(document.getElementById('liqImporto').value) || 0,
+            tasso: parseFloat(document.getElementById('liqTasso').value) || 0,
+            scadenza: document.getElementById('liqScadenza').value,
+            data_aggiornamento: document.getElementById('liqDataAgg').value,
+            note: document.getElementById('liqNote').value
+        };
+
+        var url = '/liquidita/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('liqModal')).hide();
+            PM.Toast.show('Voce salvata con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteLiq = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questa voce?', function() {
+            PM.apiCall('/liquidita/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Voce eliminata', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+})();
+</script>
+{% endblock %}

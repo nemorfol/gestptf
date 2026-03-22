@@ -1,0 +1,547 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Titolo pagina -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h4>
+        {% if latest and latest.data is defined %}
+        <small class="text-muted">Ultimo aggiornamento: {{ latest.data }}</small>
+        {% endif %}
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1 small">Patrimonio Totale</p>
+                            <h5 class="mb-0 fw-bold" id="cardTotale">
+                                {{ totali.totale|currency if totali else '—' }}
+                            </h5>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 rounded-3 p-2">
+                            <i class="bi bi-wallet2 text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1 small">Patrimonio Netto (- Debiti)</p>
+                            <h5 class="mb-0 fw-bold" id="cardNetto">
+                                {{ totali.totale_netto|currency if totali else '—' }}
+                            </h5>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded-3 p-2">
+                            <i class="bi bi-cash-coin text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Card interattiva: Patrimonio Adjusted -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100 border-start border-warning border-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <p class="text-muted mb-1 small">Patrimonio Adj. Immobili</p>
+                            <h5 class="mb-0 fw-bold text-warning" id="cardAdj">
+                                {{ totali.totale_adj|currency if totali else '—' }}
+                            </h5>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 rounded-3 p-2">
+                            <i class="bi bi-house text-warning fs-4"></i>
+                        </div>
+                    </div>
+                    <!-- Slider Esteri -->
+                    <div class="mt-1">
+                        <small class="text-muted d-flex justify-content-between mb-1">
+                            <span>Esteri <span class="badge bg-warning text-dark" id="discEstBadge">-{{ sconto_esteri }}%</span></span>
+                            <span id="adjEsteri" class="fw-semibold">—</span>
+                        </small>
+                        <input type="range" class="form-range" id="discEsteri"
+                               min="0" max="80" step="5" value="{{ sconto_esteri }}"
+                               style="accent-color: var(--bs-warning);">
+                    </div>
+                    <!-- Slider Italia -->
+                    <div class="mt-1">
+                        <small class="text-muted d-flex justify-content-between mb-1">
+                            <span>Italia <span class="badge bg-warning text-dark" id="discItaBadge">-{{ sconto_italia }}%</span></span>
+                            <span id="adjItalia" class="fw-semibold">—</span>
+                        </small>
+                        <input type="range" class="form-range" id="discItalia"
+                               min="0" max="80" step="5" value="{{ sconto_italia }}"
+                               style="accent-color: var(--bs-warning);">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1 small">N. Posizioni ETF</p>
+                            <h5 class="mb-0 fw-bold">
+                                {{ etf_summary.totale_count if etf_summary else '—' }}
+                            </h5>
+                        </div>
+                        <div class="bg-info bg-opacity-10 rounded-3 p-2">
+                            <i class="bi bi-graph-up-arrow text-info fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent border-0 fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-pie-chart me-1"></i> Allocazione Patrimoniale</span>
+                    <small class="text-muted" id="pieSubtitle">Valori nominali</small>
+                </div>
+                <div class="card-body">
+                    <div id="chartAllocation" style="width:100%;height:400px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent border-0 fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-graph-up me-1"></i> Evoluzione Patrimonio</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="evoMode" id="evoModeVal" value="valore" checked onchange="switchEvoMode()">
+                            <label class="btn btn-outline-secondary" for="evoModeVal">&euro;</label>
+                            <input type="radio" class="btn-check" name="evoMode" id="evoModePctPrev" value="pct_prev" onchange="switchEvoMode()">
+                            <label class="btn btn-outline-secondary" for="evoModePctPrev">% prec.</label>
+                            <input type="radio" class="btn-check" name="evoMode" id="evoModePctInit" value="pct_init" onchange="switchEvoMode()">
+                            <label class="btn btn-outline-secondary" for="evoModePctInit">% inizio</label>
+                        </div>
+                        <small class="text-muted" id="evoSubtitle"></small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="chartEvolution" style="width:100%;height:400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ETF / Bond summary -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent border-0 fw-semibold">
+                    <i class="bi bi-graph-up-arrow me-1"></i> Riepilogo ETF
+                </div>
+                <div class="card-body">
+                    {% if etf_summary and etf_summary.totale_investito is defined %}
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">Totale Investito</p>
+                            <h6 class="fw-bold">{{ etf_summary.totale_investito|currency }}</h6>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">N. Posizioni</p>
+                            <h6 class="fw-bold">{{ etf_summary.totale_count }}</h6>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Nessun dato disponibile.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent border-0 fw-semibold">
+                    <i class="bi bi-bank me-1"></i> Riepilogo Obbligazioni
+                </div>
+                <div class="card-body">
+                    {% if bond_summary and bond_summary.totale_investito is defined %}
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">Totale Investito</p>
+                            <h6 class="fw-bold">{{ bond_summary.totale_investito|currency }}</h6>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted small mb-1">N. Posizioni</p>
+                            <h6 class="fw-bold">{{ bond_summary.totale_count }}</h6>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Nessun dato disponibile.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    /* ── Plotly theme helpers ── */
+    function getPlotlyTheme() {
+        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: isDark ? '#dee2e6' : '#495057' },
+            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'],
+            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
+        };
+    }
+
+    function getPlotlyLayout(title) {
+        var theme = getPlotlyTheme();
+        return Object.assign({}, theme, {
+            title: { text: title, font: { size: 14 } },
+            margin: { t: 40, r: 20, b: 40, l: 70 },
+            autosize: true
+        });
+    }
+
+    var plotlyConfig = { responsive: true, displayModeBar: false };
+
+    /* ── Raw data from server ── */
+    var ASSET_KEYS   = ['immobili_esteri','immobile_italia','fondo_pensione','etf','bfp','btp','cash','cd','tfr_netto'];
+    var ASSET_LABELS = ['Imm. Esteri','Imm. Italia','Fondo Pens.','ETF','BFP','BTP','Cash','CD','TFR Netto'];
+    var IMM_KEYS     = ['immobili_esteri','immobile_italia'];
+
+    {% if latest %}
+    var latestRaw = {
+        {% for k in ['immobili_esteri','immobile_italia','fondo_pensione','etf','bfp','btp','cash','cd','tfr_netto','debiti'] %}
+        '{{ k }}': {{ latest[k]|default(0) }}{{ ',' if not loop.last }}
+        {% endfor %}
+    };
+    {% else %}
+    var latestRaw = {};
+    {% endif %}
+
+    {% if patrimonio_history %}
+    var history = [
+        {% for r in patrimonio_history %}
+        { data: '{{ r.data }}', totale: {{ r.totale }}, totale_netto: {{ r.totale_netto }}, totale_adj: {{ r.totale_adj }},
+          {% for k in ['immobili_esteri','immobile_italia','fondo_pensione','etf','bfp','btp','cash','cd','tfr_netto','debiti'] %}
+          {{ k }}: {{ r[k]|default(0) }}{{ ',' if not loop.last }}
+          {% endfor %}
+        }{{ ',' if not loop.last }}
+        {% endfor %}
+    ];
+    {% else %}
+    var history = [];
+    {% endif %}
+
+    /* ── Calculation functions ── */
+    function calcAdj(record, discEstPct, discItaPct) {
+        var total = 0;
+        ASSET_KEYS.forEach(function(k) { total += (record[k] || 0); });
+        var scontoEst = (record.immobili_esteri || 0) * (discEstPct / 100);
+        var scontoIta = (record.immobile_italia || 0) * (discItaPct / 100);
+        return total - scontoEst - scontoIta - (record.debiti || 0);
+    }
+
+    function calcTotalNoDebiti(record) {
+        var total = 0;
+        ASSET_KEYS.forEach(function(k) { total += (record[k] || 0); });
+        return total;
+    }
+
+    function getAdjustedValues(record, discEstPct, discItaPct) {
+        var vals = {};
+        ASSET_KEYS.forEach(function(k) {
+            if (k === 'immobili_esteri') {
+                vals[k] = (record[k] || 0) * (1 - discEstPct / 100);
+            } else if (k === 'immobile_italia') {
+                vals[k] = (record[k] || 0) * (1 - discItaPct / 100);
+            } else {
+                vals[k] = (record[k] || 0);
+            }
+        });
+        return vals;
+    }
+
+    function fmtEur(v) {
+        return '€ ' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.').replace('.', '#').replace(/\./g, '.').replace('#', ',').replace(/(\d)(?=(\d{3})+,)/g, '$1.');
+    }
+
+    // Better currency formatter
+    function fmtCurrency(v) {
+        var s = Math.abs(v).toFixed(2);
+        var parts = s.split('.');
+        var intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return (v < 0 ? '-' : '') + '€ ' + intPart + ',' + parts[1];
+    }
+
+    /* ── Render pie chart ── */
+    function renderPie(discEstPct, discItaPct) {
+        if (!latestRaw.immobili_esteri && latestRaw.immobili_esteri !== 0) return;
+
+        var adjVals = getAdjustedValues(latestRaw, discEstPct, discItaPct);
+        var labels = [];
+        var values = [];
+        ASSET_KEYS.forEach(function(k, i) {
+            if (adjVals[k] > 0) {
+                labels.push(ASSET_LABELS[i]);
+                values.push(adjVals[k]);
+            }
+        });
+
+        var pieData = [{
+            type: 'pie',
+            labels: labels,
+            values: values,
+            hole: 0.45,
+            textinfo: 'label+percent',
+            textposition: 'outside',
+            marker: { colors: getPlotlyTheme().colorway },
+            hovertemplate: '%{label}<br>%{value:,.0f} €<br>%{percent}<extra></extra>'
+        }];
+
+        var layout = getPlotlyLayout('');
+        layout.showlegend = false;
+        Plotly.react('chartAllocation', pieData, layout, plotlyConfig);
+
+        var el = document.getElementById('pieSubtitle');
+        if (el) {
+            if (discEstPct > 0 || discItaPct > 0) {
+                el.textContent = 'Est. -' + discEstPct + '% / Ita. -' + discItaPct + '%';
+            } else {
+                el.textContent = 'Valori nominali';
+            }
+        }
+    }
+
+    /* ── Render evolution chart (stacked area + adjusted line) ── */
+    var STACK_COLORS = ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f'];
+
+    function getEvoMode() {
+        var radios = document.getElementsByName('evoMode');
+        for (var i = 0; i < radios.length; i++) {
+            if (radios[i].checked) return radios[i].value;
+        }
+        return 'valore';
+    }
+
+    function renderEvolution(discEstPct, discItaPct) {
+        if (!history.length) return;
+
+        var mode = getEvoMode();
+        var dates = history.map(function(r) { return r.data; });
+        var traces, layout;
+
+        if (mode === 'valore') {
+            // Stacked area + adjusted line
+            traces = ASSET_KEYS.map(function(k, i) {
+                return {
+                    x: dates,
+                    y: history.map(function(r) { return r[k] || 0; }),
+                    name: ASSET_LABELS[i],
+                    type: 'scatter', mode: 'lines',
+                    stackgroup: 'one',
+                    line: { width: 0.5, color: STACK_COLORS[i] },
+                    hovertemplate: ASSET_LABELS[i] + ': %{y:,.0f} \u20ac<extra></extra>'
+                };
+            });
+
+            var adjValues = history.map(function(r) { return calcAdj(r, discEstPct, discItaPct); });
+            var adjLabel = 'Adj. Est.-' + discEstPct + '% / Ita.-' + discItaPct + '%';
+            traces.push({
+                x: dates, y: adjValues,
+                type: 'scatter', mode: 'lines+markers',
+                name: adjLabel,
+                line: { color: '#333', width: 2.5, dash: 'dot' },
+                marker: { size: 4, symbol: 'diamond', color: '#333' },
+                hovertemplate: adjLabel + ': %{y:,.0f} \u20ac<extra></extra>'
+            });
+
+            layout = getPlotlyLayout('');
+            layout.xaxis = Object.assign(layout.xaxis || {}, { type: 'date' });
+            layout.yaxis = Object.assign(layout.yaxis || {}, { tickprefix: '\u20ac ' });
+            layout.legend = { orientation: 'h', y: -0.15, font: { size: 10 } };
+            layout.hovermode = 'x unified';
+
+        } else {
+            // Percentage variation mode
+            var totali = history.map(function(r) { return calcTotalNoDebiti(r) - (r.debiti || 0); });
+            var adjVals = history.map(function(r) { return calcAdj(r, discEstPct, discItaPct); });
+            var pctTotali, pctAdj, yTitle;
+
+            if (mode === 'pct_prev') {
+                // % vs previous
+                yTitle = 'Var. % vs precedente';
+                pctTotali = totali.map(function(v, i) { return i === 0 ? 0 : round2((v - totali[i-1]) / totali[i-1] * 100); });
+                pctAdj = adjVals.map(function(v, i) { return i === 0 ? 0 : round2((v - adjVals[i-1]) / adjVals[i-1] * 100); });
+            } else {
+                // % vs first
+                yTitle = 'Var. % vs inizio';
+                var base = totali[0];
+                var baseAdj = adjVals[0];
+                pctTotali = totali.map(function(v) { return base > 0 ? round2((v - base) / base * 100) : 0; });
+                pctAdj = adjVals.map(function(v) { return baseAdj > 0 ? round2((v - baseAdj) / baseAdj * 100) : 0; });
+            }
+
+            traces = [
+                {
+                    x: dates, y: pctTotali,
+                    type: 'scatter', mode: 'lines+markers',
+                    name: 'Patrimonio Netto',
+                    line: { color: '#4e79a7', width: 2.5 },
+                    marker: { size: 5 },
+                    fill: 'tozeroy', fillcolor: 'rgba(78,121,167,0.08)',
+                    hovertemplate: '%{y:.2f}%<extra>Patrimonio Netto</extra>'
+                },
+                {
+                    x: dates, y: pctAdj,
+                    type: 'scatter', mode: 'lines+markers',
+                    name: 'Adjusted',
+                    line: { color: '#f28e2b', width: 2, dash: 'dot' },
+                    marker: { size: 4, symbol: 'diamond' },
+                    hovertemplate: '%{y:.2f}%<extra>Adjusted</extra>'
+                }
+            ];
+
+            layout = getPlotlyLayout('');
+            layout.xaxis = Object.assign(layout.xaxis || {}, { type: 'date' });
+            layout.yaxis = Object.assign(layout.yaxis || {}, { ticksuffix: '%', title: yTitle });
+            layout.legend = { orientation: 'h', y: -0.12 };
+            layout.hovermode = 'x unified';
+        }
+
+        Plotly.react('chartEvolution', traces, layout, plotlyConfig);
+
+        var el = document.getElementById('evoSubtitle');
+        if (el && mode === 'valore' && (discEstPct > 0 || discItaPct > 0)) {
+            var tots = history.map(function(r) { return calcTotalNoDebiti(r) - (r.debiti || 0); });
+            var adjs = history.map(function(r) { return calcAdj(r, discEstPct, discItaPct); });
+            var diff = tots[tots.length-1] - adjs[adjs.length-1];
+            el.textContent = 'Diff. ultimo: ' + fmtCurrency(diff);
+        } else if (el) {
+            el.textContent = '';
+        }
+    }
+
+    function round2(v) { return Math.round(v * 100) / 100; }
+
+    /* ── Update card value ── */
+    function updateAdjCard(discEstPct, discItaPct) {
+        if (!latestRaw.immobili_esteri && latestRaw.immobili_esteri !== 0) return;
+        var adjVal = calcAdj(latestRaw, discEstPct, discItaPct);
+        var esteriOrig = latestRaw.immobili_esteri || 0;
+        var italiaOrig = latestRaw.immobile_italia || 0;
+        var esteriAdj = esteriOrig * (1 - discEstPct / 100);
+        var italiaAdj = italiaOrig * (1 - discItaPct / 100);
+
+        document.getElementById('cardAdj').textContent = fmtCurrency(adjVal);
+        document.getElementById('discEstBadge').textContent = '-' + discEstPct + '%';
+        document.getElementById('discItaBadge').textContent = '-' + discItaPct + '%';
+        document.getElementById('adjEsteri').textContent = fmtCurrency(esteriAdj);
+        document.getElementById('adjItalia').textContent = fmtCurrency(italiaAdj);
+    }
+
+    /* ── Slider events ── */
+    var sliderEst = document.getElementById('discEsteri');
+    var sliderIta = document.getElementById('discItalia');
+
+    var saveTimer = null;
+    function onSliderChange() {
+        var dEst = parseInt(sliderEst.value);
+        var dIta = parseInt(sliderIta.value);
+        updateAdjCard(dEst, dIta);
+        renderPie(dEst, dIta);
+        renderEvolution(dEst, dIta);
+        // Auto-save after 500ms debounce
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(function() {
+            fetch('/impostazioni/salva', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dashboard_sconto_esteri: dEst.toString(),
+                    dashboard_sconto_italia: dIta.toString()
+                })
+            });
+        }, 500);
+    }
+
+    sliderEst.addEventListener('input', onSliderChange);
+    sliderIta.addEventListener('input', onSliderChange);
+
+    /* ── Initial render with saved values ── */
+    var initEst = {{ sconto_esteri }};
+    var initIta = {{ sconto_italia }};
+    renderPie(initEst, initIta);
+    renderEvolution(initEst, initIta);
+    updateAdjCard(initEst, initIta);
+
+    /* ── Switch evolution chart mode (valore / % precedente / % inizio) ── */
+    window.switchEvoMode = function() {
+        var dEst = parseInt(sliderEst.value);
+        var dIta = parseInt(sliderIta.value);
+        renderEvolution(dEst, dIta);
+    };
+
+    /* ── Click on evolution chart → update pie to that date ── */
+    var chartEvo = document.getElementById('chartEvolution');
+    if (chartEvo) {
+        chartEvo.on('plotly_click', function(eventData) {
+            if (!eventData || !eventData.points || !eventData.points.length) return;
+            var pointIdx = eventData.points[0].pointIndex;
+            if (pointIdx >= 0 && pointIdx < history.length) {
+                var record = history[pointIdx];
+                // Render pie with this historical record
+                var dEst = parseInt(sliderEst.value);
+                var dIta = parseInt(sliderIta.value);
+                var adjVals = getAdjustedValues(record, dEst, dIta);
+                var lbls = [];
+                var vals = [];
+                ASSET_KEYS.forEach(function(k, i) {
+                    if (adjVals[k] > 0) {
+                        lbls.push(ASSET_LABELS[i]);
+                        vals.push(adjVals[k]);
+                    }
+                });
+                var pieData = [{
+                    type: 'pie', labels: lbls, values: vals, hole: 0.45,
+                    textinfo: 'label+percent', textposition: 'outside',
+                    marker: { colors: getPlotlyTheme().colorway },
+                    hovertemplate: '%{label}<br>%{value:,.0f} \u20ac<br>%{percent}<extra></extra>'
+                }];
+                var layout = getPlotlyLayout('');
+                layout.showlegend = false;
+                Plotly.react('chartAllocation', pieData, layout, plotlyConfig);
+                var el = document.getElementById('pieSubtitle');
+                if (el) el.textContent = 'Al ' + record.data;
+            }
+        });
+    }
+
+    /* ── Re-render on theme change ── */
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        setTimeout(function() {
+            var dEst = parseInt(sliderEst.value);
+            var dIta = parseInt(sliderIta.value);
+            renderPie(dEst, dIta);
+            renderEvolution(dEst, dIta);
+        }, 100);
+    });
+})();
+</script>
+{% endblock %}

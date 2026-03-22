@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -c \":*)",
+      "Bash(where python:*)",
+      "Bash(C:/Python310/python.exe -m pip install Flask openpyxl xlsxwriter --quiet)",
+      "Bash(C:/Python310/python.exe -c \":*)",
+      "Bash(for f:*)",
+      "Bash(sed -i 's/PM_fmt_currency/fmt_currency/g; s/PM_fmt_percent/fmt_percent/g; s/PM_fmt_number/fmt_number/g' \"$f\")",
+      "Bash(rm -f data/gestptf.db)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5000/)",
+      "Bash(C:/Python310/python.exe app.py)",
+      "Bash(echo \"=== $f ===\")",
+      "Read(//f/sviluppo/gestptf/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5000/bfp/)",
+      "Bash(C:/Python310/python.exe -m pip install PyPDF2 --quiet)",
+      "Bash(C:/Python310/python.exe:*)",
+      "Bash(python -c \"import py_compile; py_compile.compile\\(''services/bfp_pdf_parser.py'', doraise=True\\); print\\(''bfp_pdf_parser.py OK''\\)\")",
+      "Bash(python -c \"import py_compile; py_compile.compile\\(''services/bfp_calculator.py'', doraise=True\\); print\\(''bfp_calculator.py OK''\\)\")",
+      "Bash(python -c \"import py_compile; py_compile.compile\\(''routes/bfp.py'', doraise=True\\); print\\(''bfp.py OK''\\)\")",
+      "Bash(ls -la /f/sviluppo/gestptf/*.py)",
+      "Bash(python -c \"from database import init_db; init_db\\(\\); print\\(''OK''\\)\")",
+      "Bash(taskkill //f //im python.exe)",
+      "Bash(curl -s http://127.0.0.1:5000/)"
+    ]
+  }
+}

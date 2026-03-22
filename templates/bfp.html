@@ -1,0 +1,937 @@
+{% extends 'base.html' %}
+
+{% block title %}Buoni Fruttiferi Postali - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-postcard me-2"></i>Buoni Fruttiferi Postali</h4>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-warning" onclick="importaPdf()">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Importa Fogli Informativi (PDF)
+            </button>
+            <button class="btn btn-outline-info" onclick="ricalcolaValori()">
+                <i class="bi bi-calculator me-1"></i> Ricalcola Valori
+            </button>
+            <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="bi bi-file-earmark-excel me-1"></i> Importa da Excel
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bfpModal" onclick="resetBfpForm()">
+                <i class="bi bi-plus-lg me-1"></i> Nuovo BFP
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Valore Nominale Totale</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_nominale|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Valore Attuale Lordo</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_attuale|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Valore Netto a Scadenza</p>
+                    <h5 class="mb-0 fw-bold text-success">{{ summary.totale_netto_scadenza|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 h-100 {% if summary and summary.esente_bollo %}border-start border-success border-3{% else %}border-start border-warning border-3{% endif %}">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">
+                        Bollo Annuo
+                        {% if summary and summary.esente_bollo %}
+                        <span class="badge bg-success ms-1">Esente &lt; 5.000€</span>
+                        {% endif %}
+                    </p>
+                    {% if summary and summary.esente_bollo %}
+                    <h5 class="mb-0 fw-bold text-success"><i class="bi bi-check-circle-fill me-1"></i>€ 0,00</h5>
+                    {% else %}
+                    <h5 class="mb-0 fw-bold text-warning">{{ summary.totale_bollo|currency if summary else '—' }}</h5>
+                    <small class="text-muted">0,20% su {{ summary.totale_attuale|currency }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Riepilogo Rendita Totale (BSF + BO65) -->
+    <div class="card shadow-sm border-0 mb-4 border-start border-info border-3" id="renditaTotaleCard">
+        <div class="card-header bg-transparent border-0 fw-semibold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-cash-coin me-1"></i> Riepilogo Rendita 65-80 anni (BSF + BO65)</span>
+            <div class="d-flex align-items-center gap-2">
+                <label for="globalDataNascita" class="form-label mb-0 small text-muted">Data di nascita:</label>
+                <input type="date" class="form-control form-control-sm" id="globalDataNascita" style="width:160px;">
+                <button class="btn btn-sm btn-outline-primary" id="btnCalcolaRenditaTotale">
+                    <i class="bi bi-calculator me-1"></i> Calcola
+                </button>
+            </div>
+        </div>
+        <div class="card-body" id="renditaTotaleBody">
+            <p class="text-muted small mb-0">Inserisci la data di nascita e premi Calcola per vedere il riepilogo totale della rendita dai 65 agli 80 anni.</p>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Lista BFP
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="bfpTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Tipologia</th>
+                            <th>Serie</th>
+                            <th>Data Sottoscr.</th>
+                            <th>Scadenza</th>
+                            <th class="text-end">Val. Nominale</th>
+                            <th class="text-end">Val. Attuale Lordo</th>
+                            <th class="text-end">Ritenuta</th>
+                            <th class="text-end">Bollo</th>
+                            <th class="text-end">Val. Netto Rimb.</th>
+                            <th class="text-end">Val. Netto Scad.</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bfp in records %}
+                        <tr data-id="{{ bfp.id }}">
+                            <td>{{ bfp.tipologia }}</td>
+                            <td>{{ bfp.serie }}</td>
+                            <td>{{ bfp.data_sottoscrizione }}</td>
+                            <td>{{ bfp.scadenza }}</td>
+                            <td class="text-end">{{ bfp.valore_nominale|currency }}</td>
+                            <td class="text-end">{{ bfp.valore_lordo_attuale|currency }}</td>
+                            <td class="text-end">{{ bfp.ritenuta_fiscale|currency }}</td>
+                            <td class="text-end {% if bfp.bollo_annuo == 0 %}text-success{% endif %}">
+                                {% if bfp.bollo_annuo == 0 %}<i class="bi bi-check-circle-fill text-success" title="Esente < 5.000€"></i> Esente{% else %}{{ bfp.bollo_annuo|currency }}{% endif %}
+                            </td>
+                            <td class="text-end">{{ bfp.valore_rimborso_netto|currency }}</td>
+                            <td class="text-end">{{ bfp.valore_netto_scadenza|currency }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-success{% if not bfp.has_coefficienti %} disabled{% endif %}"
+                                            {% if bfp.has_coefficienti %}onclick="showPianoRimborso({{ bfp.id }}, '{{ bfp.tipologia }}', '{{ bfp.serie }}', '{{ bfp.data_sottoscrizione }}')"{% endif %}
+                                            title="{% if bfp.has_coefficienti %}Piano Rimborso{% else %}Coefficienti non disponibili - importa i PDF{% endif %}">
+                                        <i class="bi bi-calendar3"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick='editBfp({{ bfp|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteBfp({{ bfp.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Riepilogo per Tipologia -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-collection me-1"></i> Riepilogo per Tipologia
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Tipologia</th>
+                            <th class="text-end">N. Buoni</th>
+                            <th class="text-end">Tot. Nominale</th>
+                            <th class="text-end">Tot. Attuale</th>
+                            <th class="text-end">Tot. Netto Scadenza</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in riepilogo %}
+                        <tr>
+                            <td>{{ r.tipologia }}</td>
+                            <td class="text-end">{{ r.count }}</td>
+                            <td class="text-end">{{ r.totale_nominale|currency }}</td>
+                            <td class="text-end">{{ r.totale_attuale|currency }}</td>
+                            <td class="text-end">{{ r.totale_netto_scadenza|currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal BFP -->
+<div class="modal fade" id="bfpModal" tabindex="-1" aria-labelledby="bfpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bfpModalLabel">Nuovo BFP</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bfpForm">
+                    <input type="hidden" id="bfpId" name="id">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bfpProdotto" class="form-label">Prodotto</label>
+                            <select class="form-select" id="bfpProdotto" onchange="onProdottoChange(this.value)" required>
+                                <option value="">— Seleziona prodotto —</option>
+                            </select>
+                            <input type="hidden" id="bfpTipologia" name="tipologia">
+                            <input type="hidden" id="bfpSerie" name="serie">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="bfpDataSottoscrizione" class="form-label">Data Sottoscrizione</label>
+                            <input type="date" class="form-control" id="bfpDataSottoscrizione" name="data_sottoscrizione" required
+                                   onchange="autoCalcolaBfp()">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="bfpValoreNominale" class="form-label">Valore Nominale (&euro;)</label>
+                            <input type="number" step="0.01" class="form-control" id="bfpValoreNominale" name="valore_nominale" required
+                                   onchange="autoCalcolaBfp()">
+                        </div>
+                    </div>
+                    <div id="bfpCalcAlert" class="alert alert-success small mb-3" style="display:none;">
+                        <i class="bi bi-calculator me-1"></i> <span id="bfpCalcText"></span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="bfpValoreAttualeLordo" class="form-label">Valore Attuale Lordo</label>
+                            <input type="number" step="0.01" class="form-control" id="bfpValoreAttualeLordo" name="valore_attuale_lordo" value="0" readonly>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bfpRitenuta" class="form-label">Ritenuta</label>
+                            <input type="number" step="0.01" class="form-control" id="bfpRitenuta" name="ritenuta" value="0" readonly>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bfpValoreNettoRimborso" class="form-label">Valore Netto Rimborso</label>
+                            <input type="number" step="0.01" class="form-control" id="bfpValoreNettoRimborso" name="valore_netto_rimborso" value="0" readonly>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bfpValoreNettoScadenza" class="form-label">Valore Netto Scadenza</label>
+                            <input type="number" step="0.01" class="form-control" id="bfpValoreNettoScadenza" name="valore_netto_scadenza" value="0" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="bfpScadenza" class="form-label">Scadenza</label>
+                            <input type="date" class="form-control" id="bfpScadenza" name="scadenza" readonly>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveBfp()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Piano Rimborso -->
+<div class="modal fade" id="pianoRimborsoModal" tabindex="-1" aria-labelledby="pianoRimborsoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pianoRimborsoModalLabel">Piano Rimborso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body" style="max-height: 75vh;">
+                <!-- Summary info -->
+                <div class="row g-3 mb-4" id="pianoRiepilogo">
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-2">
+                                <p class="text-muted mb-0 small">Valore Nominale</p>
+                                <h6 class="mb-0 fw-bold" id="pianoNominale">-</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-2">
+                                <p class="text-muted mb-0 small">Valore Lordo a Scadenza</p>
+                                <h6 class="mb-0 fw-bold" id="pianoLordoScadenza">-</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-2">
+                                <p class="text-muted mb-0 small">Valore Netto a Scadenza</p>
+                                <h6 class="mb-0 fw-bold text-success" id="pianoNettoScadenza">-</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-2">
+                                <p class="text-muted mb-0 small">Durata / Periodi</p>
+                                <h6 class="mb-0 fw-bold" id="pianoDurata">-</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <div id="pianoChart" style="height: 350px;"></div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table id="pianoTable" class="table table-striped table-sm table-hover align-middle" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Periodo</th>
+                                <th class="text-end">Coeff. Lordo</th>
+                                <th class="text-end">Coeff. Netto</th>
+                                <th class="text-end">Valore Lordo</th>
+                                <th class="text-end">Valore Netto</th>
+                                <th class="text-end">Ritenuta</th>
+                                <th class="text-end">Interessi Lordi</th>
+                                <th class="text-end">Interessi Netti</th>
+                                <th class="text-end">Tasso Lordo %</th>
+                                <th class="text-end">Tasso Netto %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pianoTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Rendita section (BSF/BO65 only) -->
+                <div id="renditaSection" class="mt-4" style="display:none;">
+                    <hr>
+                    <h6 class="fw-bold mb-3"><i class="bi bi-cash-coin me-1"></i> Rendita 65-80 anni</h6>
+                    <p class="text-muted small mb-3">Rendita pagata mensilmente dai 65 agli 80 anni (180 rate)</p>
+                    <div class="row g-2 mb-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="renditaDataNascita" class="form-label small">Data di nascita</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   id="renditaDataNascita">
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small" id="renditaEtaCalcolata"></span>
+                            <input type="hidden" id="renditaEta">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-sm btn-outline-primary" onclick="calcolaRendita()">
+                                <i class="bi bi-calculator me-1"></i> Calcola Rendita
+                            </button>
+                        </div>
+                    </div>
+                    <div id="renditaResults" style="display:none;">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body py-2">
+                                        <p class="text-muted mb-0 small">Rata Mensile Netta</p>
+                                        <h5 class="mb-0 fw-bold text-success" id="renditaMensileNetta">-</h5>
+                                        <small class="text-muted" id="renditaMensileLordaLabel">-</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body py-2">
+                                        <p class="text-muted mb-0 small">Rata Annua Netta</p>
+                                        <h5 class="mb-0 fw-bold text-primary" id="renditaAnnuaNetta">-</h5>
+                                        <small class="text-muted" id="renditaAnnuaLordaLabel">-</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body py-2">
+                                        <p class="text-muted mb-0 small">Totale Rendita (15 anni)</p>
+                                        <h5 class="mb-0 fw-bold" id="renditaTotaleNetta">-</h5>
+                                        <small class="text-muted" id="renditaTotaleLordaLabel">-</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-4">
+                                <small class="text-muted">Fascia et&agrave;: <span id="renditaFasciaEta">-</span></small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Coefficiente rata: <span id="renditaCoeff">-</span></small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Durata: <span id="renditaDurata">180 mesi (15 anni)</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Import Excel -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Importa BFP da Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">File Excel (RPOL)</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx,.xls" required>
+                    </div>
+                    <p class="text-muted small">Seleziona il file Excel scaricato da RPOL contenente i dati dei Buoni Fruttiferi Postali.</p>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-success" onclick="importExcel()">
+                    <i class="bi bi-upload me-1"></i> Importa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var table = PM.DT.init('#bfpTable', {
+        order: [[2, 'desc']],
+        scrollX: true,
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    // === Riepilogo Rendita Totale ===
+    var globalDnInput = document.getElementById('globalDataNascita');
+    var savedDn = localStorage.getItem('gestptf_data_nascita');
+    if (savedDn) globalDnInput.value = savedDn;
+
+    document.getElementById('btnCalcolaRenditaTotale').addEventListener('click', function() {
+        var dn = globalDnInput.value;
+        if (!dn) { PM.Toast.show('Inserire la data di nascita', 'warning'); return; }
+        localStorage.setItem('gestptf_data_nascita', dn);
+
+        showLoading();
+        fetch('/bfp/rendita-totale?data_nascita=' + encodeURIComponent(dn))
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            hideLoading();
+            if (!res.success) { PM.Toast.show('Errore: ' + res.error, 'error'); return; }
+            var d = res.data;
+            var fc = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
+
+            var html = '<div class="row g-3 mb-3">';
+            html += '<div class="col-md-3"><div class="card border-0 bg-light"><div class="card-body py-2 text-center">';
+            html += '<p class="text-muted mb-0 small">Valore al 65&deg; anno</p>';
+            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(d.totale_valore_65) + '</h5>';
+            html += '<small class="text-muted">Nominale: ' + fc(d.totale_nominale) + '</small>';
+            html += '</div></div></div>';
+
+            html += '<div class="col-md-3"><div class="card border-0 bg-light"><div class="card-body py-2 text-center">';
+            html += '<p class="text-muted mb-0 small">Rata Mensile Netta</p>';
+            html += '<h4 class="mb-0 fw-bold text-success">' + fc(d.totale_mensile_netta) + '</h4>';
+            html += '<small class="text-muted">Lorda: ' + fc(d.totale_mensile_lorda) + '</small>';
+            html += '</div></div></div>';
+
+            html += '<div class="col-md-3"><div class="card border-0 bg-light"><div class="card-body py-2 text-center">';
+            html += '<p class="text-muted mb-0 small">Rata Annua Netta</p>';
+            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(d.totale_annua_netta) + '</h5>';
+            html += '<small class="text-muted">Lorda: ' + fc(d.totale_annua_lorda) + '</small>';
+            html += '</div></div></div>';
+
+            html += '<div class="col-md-3"><div class="card border-0 bg-light"><div class="card-body py-2 text-center">';
+            html += '<p class="text-muted mb-0 small">Totale Rendita (15 anni)</p>';
+            html += '<h5 class="mb-0 fw-bold">' + fc(d.totale_rendita_15_anni_netta) + '</h5>';
+            html += '<small class="text-muted">Lorda: ' + fc(d.totale_rendita_15_anni_lorda) + '</small>';
+            html += '</div></div></div>';
+            html += '</div>';
+
+            // Detail table per buono
+            if (d.dettaglio && d.dettaglio.length > 0) {
+                html += '<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0">';
+                html += '<thead><tr><th>Tipologia</th><th>Data Sottoscr.</th><th class="text-end">Nominale</th>';
+                html += '<th class="text-end">Et&agrave; Sottoscr.</th><th class="text-end">Val. al 65&deg;</th>';
+                html += '<th class="text-end">Rata Mensile Netta</th><th class="text-end">Rata Mensile Lorda</th></tr></thead><tbody>';
+                d.dettaglio.forEach(function(b) {
+                    var etaLabel = Math.floor(b.eta_sottoscrizione) + 'a';
+                    if (b.eta_sottoscrizione % 1 >= 0.5) etaLabel += ' 6m';
+                    html += '<tr><td><small>' + b.tipologia + '</small></td>';
+                    html += '<td><small>' + b.data_sottoscrizione.substring(0,10) + '</small></td>';
+                    html += '<td class="text-end"><small>' + fc(b.valore_nominale) + '</small></td>';
+                    html += '<td class="text-end"><small>' + etaLabel + '</small></td>';
+                    html += '<td class="text-end"><small>' + fc(b.valore_al_65_netto) + '</small></td>';
+                    html += '<td class="text-end text-success fw-bold"><small>' + fc(b.rata_mensile_netta) + '</small></td>';
+                    html += '<td class="text-end"><small>' + fc(b.rata_mensile_lorda) + '</small></td></tr>';
+                });
+                html += '</tbody></table></div>';
+                html += '<p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle me-1"></i>' + d.num_buoni + ' buoni con rendita (BSF + BO65). Valori minimi garantiti, al netto della rivalutazione all\'inflazione.</p>';
+            }
+
+            document.getElementById('renditaTotaleBody').innerHTML = html;
+        })
+        .catch(function(err) { hideLoading(); PM.Toast.show('Errore: ' + err.message, 'error'); });
+    });
+
+    // --- Load available series into dropdown ---
+    var serieList = [];
+    fetch('/bfp/serie-disponibili')
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (!resp.success) return;
+            serieList = resp.data;
+            var sel = document.getElementById('bfpProdotto');
+            resp.data.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s.serie;
+                opt.textContent = s.tipologia + ' (' + s.serie + ')';
+                opt.dataset.tipologia = s.tipologia;
+                sel.appendChild(opt);
+            });
+        });
+
+    window.onProdottoChange = function(serie) {
+        var sel = document.getElementById('bfpProdotto');
+        var opt = sel.options[sel.selectedIndex];
+        document.getElementById('bfpSerie').value = serie;
+        document.getElementById('bfpTipologia').value = opt.dataset.tipologia || '';
+        autoCalcolaBfp();
+    };
+
+    window.autoCalcolaBfp = function() {
+        var serie = document.getElementById('bfpSerie').value;
+        var nominale = parseFloat(document.getElementById('bfpValoreNominale').value);
+        var dataSott = document.getElementById('bfpDataSottoscrizione').value;
+        if (!serie || !nominale || !dataSott) return;
+
+        fetch('/bfp/calcola-valori', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ serie: serie, valore_nominale: nominale, data_sottoscrizione: dataSott })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (!resp.success) return;
+            var d = resp.data;
+            if (d.valore_lordo_attuale != null) {
+                document.getElementById('bfpValoreAttualeLordo').value = d.valore_lordo_attuale;
+                document.getElementById('bfpRitenuta').value = d.ritenuta_fiscale || 0;
+                document.getElementById('bfpValoreNettoRimborso').value = d.valore_rimborso_netto || 0;
+            }
+            if (d.valore_netto_scadenza != null) {
+                document.getElementById('bfpValoreNettoScadenza').value = d.valore_netto_scadenza;
+            }
+            if (d.anno_inizio_rendita) {
+                // BSF/BO65: scadenza = inizio rendita (65 anni)
+                document.getElementById('bfpScadenza').value = d.anno_inizio_rendita + '-' + dataSott.substring(5);
+            } else if (d.durata_anni) {
+                var ds = new Date(dataSott);
+                ds.setFullYear(ds.getFullYear() + d.durata_anni);
+                document.getElementById('bfpScadenza').value = ds.toISOString().split('T')[0];
+            }
+            var alertEl = document.getElementById('bfpCalcAlert');
+            alertEl.style.display = '';
+            var text = 'Valori calcolati: Lordo ' + PM.Fmt.currency(d.valore_lordo_attuale || 0) +
+                ' | Netto Rimb. ' + PM.Fmt.currency(d.valore_rimborso_netto || 0) +
+                ' | Netto Scad. ' + PM.Fmt.currency(d.valore_netto_scadenza || 0);
+            if (d.valore_rimborso_65) {
+                text += '\nRimborso al 65° anno: ' + PM.Fmt.currency(d.valore_rimborso_65) +
+                    ' (età sott. ' + d.eta_sottoscrizione + ' anni)';
+            }
+            if (d.rendita) {
+                text += '\nRendita: ' + PM.Fmt.currency(d.rendita.rata_mensile_netta) + '/mese netti | ' +
+                    PM.Fmt.currency(d.rendita.rata_annua_netta) + '/anno | ' +
+                    'Totale: ' + PM.Fmt.currency(d.rendita.totale_rendita_netta);
+            }
+            document.getElementById('bfpCalcText').innerText = text;
+        })
+        .catch(function() {});
+    };
+
+    window.resetBfpForm = function() {
+        document.getElementById('bfpForm').reset();
+        document.getElementById('bfpId').value = '';
+        document.getElementById('bfpModalLabel').textContent = 'Nuovo BFP';
+        document.getElementById('bfpCalcAlert').style.display = 'none';
+        document.getElementById('bfpDataSottoscrizione').value = new Date().toISOString().split('T')[0];
+    };
+
+    window.editBfp = function(bfp) {
+        document.getElementById('bfpId').value = bfp.id;
+        document.getElementById('bfpTipologia').value = bfp.tipologia || '';
+        document.getElementById('bfpSerie').value = bfp.serie || '';
+        // Select matching product in dropdown
+        var sel = document.getElementById('bfpProdotto');
+        sel.value = bfp.serie || '';
+        document.getElementById('bfpDataSottoscrizione').value = (bfp.data_sottoscrizione || '').substring(0, 10);
+        document.getElementById('bfpScadenza').value = (bfp.scadenza || '').substring(0, 10);
+        document.getElementById('bfpValoreNominale').value = bfp.valore_nominale || 0;
+        document.getElementById('bfpValoreAttualeLordo').value = bfp.valore_lordo_attuale || 0;
+        document.getElementById('bfpRitenuta').value = bfp.ritenuta_fiscale || 0;
+        document.getElementById('bfpValoreNettoRimborso').value = bfp.valore_rimborso_netto || 0;
+        document.getElementById('bfpValoreNettoScadenza').value = bfp.valore_netto_scadenza || 0;
+        document.getElementById('bfpCalcAlert').style.display = 'none';
+        document.getElementById('bfpModalLabel').textContent = 'Modifica BFP';
+        new bootstrap.Modal(document.getElementById('bfpModal')).show();
+    };
+
+    window.saveBfp = function() {
+        var form = document.getElementById('bfpForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('bfpId').value;
+        var data = {
+            tipologia: document.getElementById('bfpTipologia').value,
+            serie: document.getElementById('bfpSerie').value,
+            data_sottoscrizione: document.getElementById('bfpDataSottoscrizione').value,
+            scadenza: document.getElementById('bfpScadenza').value,
+            valore_nominale: parseFloat(document.getElementById('bfpValoreNominale').value) || 0,
+            valore_attuale_lordo: parseFloat(document.getElementById('bfpValoreAttualeLordo').value) || 0,
+            ritenuta: parseFloat(document.getElementById('bfpRitenuta').value) || 0,
+            valore_netto_rimborso: parseFloat(document.getElementById('bfpValoreNettoRimborso').value) || 0,
+            valore_netto_scadenza: parseFloat(document.getElementById('bfpValoreNettoScadenza').value) || 0
+        };
+
+        var url = '/bfp/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('bfpModal')).hide();
+            PM.Toast.show('BFP salvato con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteBfp = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questo BFP?', function() {
+            PM.apiCall('/bfp/' + id, 'DELETE').then(function() {
+                PM.Toast.show('BFP eliminato', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+
+    window.importaPdf = function() {
+        PM.confirmAction('Importare i fogli informativi PDF? I coefficienti esistenti verranno aggiornati.', function() {
+            showLoading();
+            fetch('/bfp/importa-pdf', { method: 'POST' })
+            .then(function(resp) { return resp.json(); })
+            .then(function(result) {
+                hideLoading();
+                if (result.success) {
+                    var d = result.data;
+                    var msg = 'Importazione completata: ' + d.files_processati + ' file, ' + d.totale_coefficienti + ' coefficienti';
+                    if (d.errori && d.errori.length > 0) {
+                        msg += ' (' + d.errori.length + ' errori)';
+                    }
+                    PM.Toast.show(msg, 'success');
+                } else {
+                    PM.Toast.show('Errore: ' + result.error, 'error');
+                }
+            })
+            .catch(function(err) {
+                hideLoading();
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+
+    window.ricalcolaValori = function() {
+        PM.confirmAction('Ricalcolare i valori di tutti i BFP usando i coefficienti importati?', function() {
+            showLoading();
+            fetch('/bfp/ricalcola', { method: 'POST' })
+            .then(function(resp) { return resp.json(); })
+            .then(function(result) {
+                hideLoading();
+                if (result.success) {
+                    PM.Toast.show('Ricalcolo completato per ' + result.count + ' BFP', 'success');
+                    location.reload();
+                } else {
+                    PM.Toast.show('Errore: ' + result.error, 'error');
+                }
+            })
+            .catch(function(err) {
+                hideLoading();
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+
+    // Track current BFP for rendita calculation
+    var currentPianoBfpId = null;
+    var currentPianoBfpDataSottoscrizione = null;
+
+    // Restore saved birth date from localStorage
+    var savedDataNascita = localStorage.getItem('gestptf_data_nascita');
+
+    window.showPianoRimborso = function(id, tipologia, serie, dataSottoscrizione) {
+        currentPianoBfpId = id;
+        currentPianoBfpDataSottoscrizione = dataSottoscrizione;
+        showLoading();
+        fetch('/bfp/piano-rimborso/' + id)
+        .then(function(resp) { return resp.json(); })
+        .then(function(result) {
+            hideLoading();
+            if (!result.success) {
+                PM.Toast.show('Errore: ' + result.error, 'error');
+                return;
+            }
+            var data = result.data;
+            var riepilogo = data.riepilogo;
+            var piano = data.piano;
+
+            // Update modal title
+            document.getElementById('pianoRimborsoModalLabel').textContent =
+                'Piano Rimborso - ' + tipologia + ' (' + serie + ')';
+
+            // Show/hide rendita section based on has_rendita flag
+            var renditaSection = document.getElementById('renditaSection');
+            var renditaResults = document.getElementById('renditaResults');
+            if (riepilogo.has_rendita) {
+                renditaSection.style.display = 'block';
+                renditaResults.style.display = 'none';
+                // Restore saved birth date
+                var dnInput = document.getElementById('renditaDataNascita');
+                if (savedDataNascita) {
+                    dnInput.value = savedDataNascita;
+                    aggiornaEtaCalcolata();
+                } else {
+                    dnInput.value = '';
+                    document.getElementById('renditaEtaCalcolata').textContent = '';
+                    document.getElementById('renditaEta').value = '';
+                }
+            } else {
+                renditaSection.style.display = 'none';
+            }
+
+            // Update summary cards
+            var fmtCur = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
+            document.getElementById('pianoNominale').textContent = fmtCur(riepilogo.valore_nominale);
+            document.getElementById('pianoLordoScadenza').textContent = fmtCur(riepilogo.valore_lordo_scadenza);
+            document.getElementById('pianoNettoScadenza').textContent = fmtCur(riepilogo.valore_netto_scadenza);
+            document.getElementById('pianoDurata').textContent =
+                riepilogo.durata_massima_anni + 'a ' + riepilogo.durata_massima_semestri + 's (' + riepilogo.totale_periodi + ' periodi)';
+
+            // Destroy previous DataTable if exists
+            if ($.fn.DataTable.isDataTable('#pianoTable')) {
+                $('#pianoTable').DataTable().destroy();
+                $('#pianoTableBody').empty();
+            }
+
+            // Populate table
+            var tbody = document.getElementById('pianoTableBody');
+            tbody.innerHTML = '';
+            piano.forEach(function(p) {
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td>' + p.periodo_label + '</td>' +
+                    '<td class="text-end">' + p.coeff_lordo.toFixed(8) + '</td>' +
+                    '<td class="text-end">' + p.coeff_netto.toFixed(8) + '</td>' +
+                    '<td class="text-end">' + fmtCur(p.valore_lordo) + '</td>' +
+                    '<td class="text-end">' + fmtCur(p.valore_netto) + '</td>' +
+                    '<td class="text-end">' + fmtCur(p.ritenuta) + '</td>' +
+                    '<td class="text-end">' + fmtCur(p.interessi_lordi) + '</td>' +
+                    '<td class="text-end">' + fmtCur(p.interessi_netti) + '</td>' +
+                    '<td class="text-end">' + p.tasso_lordo.toFixed(2) + '%</td>' +
+                    '<td class="text-end">' + p.tasso_netto.toFixed(2) + '%</td>';
+                tbody.appendChild(tr);
+            });
+
+            // Init DataTable with paging
+            $('#pianoTable').DataTable({
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Tutti']],
+                ordering: false,
+                searching: false,
+                language: {
+                    lengthMenu: 'Mostra _MENU_ periodi',
+                    info: 'Periodo _START_-_END_ di _TOTAL_',
+                    paginate: { previous: '&laquo;', next: '&raquo;' }
+                }
+            });
+
+            // Build Plotly chart
+            var periodi = piano.map(function(p) { return p.periodo_label; });
+            var valoriLordi = piano.map(function(p) { return p.valore_lordo; });
+            var valoriNetti = piano.map(function(p) { return p.valore_netto; });
+            var nominale = piano.map(function() { return riepilogo.valore_nominale; });
+
+            var traces = [
+                {
+                    x: periodi, y: nominale, name: 'Valore Nominale',
+                    type: 'scatter', mode: 'lines',
+                    line: { color: '#6c757d', dash: 'dash', width: 1 }
+                },
+                {
+                    x: periodi, y: valoriLordi, name: 'Valore Lordo',
+                    type: 'scatter', mode: 'lines+markers',
+                    line: { color: '#0d6efd', width: 2 },
+                    marker: { size: 4 }
+                },
+                {
+                    x: periodi, y: valoriNetti, name: 'Valore Netto',
+                    type: 'scatter', mode: 'lines+markers',
+                    line: { color: '#198754', width: 2 },
+                    marker: { size: 4 }
+                }
+            ];
+
+            var layout = {
+                title: { text: 'Crescita del valore nel tempo', font: { size: 14 } },
+                xaxis: { title: 'Periodo', tickangle: -45 },
+                yaxis: { title: 'Valore (EUR)', tickformat: ',.2f' },
+                legend: { orientation: 'h', y: -0.3 },
+                margin: { t: 40, b: 80, l: 80, r: 20 },
+                hovermode: 'x unified'
+            };
+
+            Plotly.newPlot('pianoChart', traces, layout, { responsive: true });
+
+            new bootstrap.Modal(document.getElementById('pianoRimborsoModal')).show();
+        })
+        .catch(function(err) {
+            hideLoading();
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    // Calculate age at subscription from birth date
+    function aggiornaEtaCalcolata() {
+        var dn = document.getElementById('renditaDataNascita').value;
+        if (!dn || !currentPianoBfpDataSottoscrizione) {
+            document.getElementById('renditaEtaCalcolata').textContent = '';
+            document.getElementById('renditaEta').value = '';
+            return;
+        }
+        // Save to localStorage
+        localStorage.setItem('gestptf_data_nascita', dn);
+        savedDataNascita = dn;
+
+        var nascita = new Date(dn);
+        var sottoscr = new Date(currentPianoBfpDataSottoscrizione);
+        if (isNaN(nascita) || isNaN(sottoscr)) return;
+
+        // Calculate age in years + semesters
+        var diffMs = sottoscr - nascita;
+        var diffMonths = (sottoscr.getFullYear() - nascita.getFullYear()) * 12 + (sottoscr.getMonth() - nascita.getMonth());
+        if (sottoscr.getDate() < nascita.getDate()) diffMonths--;
+        var anni = Math.floor(diffMonths / 12);
+        var mesiResto = diffMonths % 12;
+        var eta = mesiResto >= 6 ? anni + 0.5 : anni;
+
+        document.getElementById('renditaEta').value = eta;
+        var label = anni + ' anni';
+        if (mesiResto >= 6) label += ' e 6 mesi';
+        label += ' alla sottoscrizione';
+        document.getElementById('renditaEtaCalcolata').textContent = label;
+    }
+
+    // Listen for date change
+    document.getElementById('renditaDataNascita').addEventListener('change', aggiornaEtaCalcolata);
+
+    window.calcolaRendita = function() {
+        aggiornaEtaCalcolata();
+        var eta = document.getElementById('renditaEta').value;
+        if (!eta || !currentPianoBfpId) {
+            PM.Toast.show('Inserire la data di nascita', 'warning');
+            return;
+        }
+
+        var fmtCur = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
+
+        fetch('/bfp/rendita/' + currentPianoBfpId + '?eta=' + encodeURIComponent(eta))
+        .then(function(resp) { return resp.json(); })
+        .then(function(result) {
+            if (!result.success) {
+                PM.Toast.show('Errore: ' + result.error, 'error');
+                return;
+            }
+            var d = result.data;
+            document.getElementById('renditaResults').style.display = 'block';
+            document.getElementById('renditaMensileNetta').textContent = fmtCur(d.rata_mensile_netta);
+            document.getElementById('renditaMensileLordaLabel').textContent = 'Lorda: ' + fmtCur(d.rata_mensile_lorda);
+            document.getElementById('renditaAnnuaNetta').textContent = fmtCur(d.rata_annua_netta);
+            document.getElementById('renditaAnnuaLordaLabel').textContent = 'Lorda: ' + fmtCur(d.rata_annua_lorda);
+            document.getElementById('renditaTotaleNetta').textContent = fmtCur(d.totale_rendita_netta);
+            document.getElementById('renditaTotaleLordaLabel').textContent = 'Lorda: ' + fmtCur(d.totale_rendita_lorda);
+            document.getElementById('renditaFasciaEta').textContent = d.eta_da + ' - ' + d.eta_a;
+            document.getElementById('renditaCoeff').textContent = d.coeff_rata.toFixed(8);
+            document.getElementById('renditaDurata').textContent = d.durata_rendita_mesi + ' mesi (' + d.durata_rendita_anni + ' anni)';
+        })
+        .catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.importExcel = function() {
+        var fileInput = document.getElementById('importFile');
+        if (!fileInput.files.length) {
+            PM.Toast.show('Seleziona un file Excel', 'warning');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        showLoading();
+        fetch('/bfp/importa-excel', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(resp) { return resp.json(); })
+        .then(function(result) {
+            hideLoading();
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                PM.Toast.show('Importazione completata con successo', 'success');
+                location.reload();
+            } else {
+                PM.Toast.show('Errore: ' + result.error, 'error');
+            }
+        })
+        .catch(function(err) {
+            hideLoading();
+            PM.Toast.show('Errore durante l\'importazione: ' + err.message, 'error');
+        });
+    };
+})();
+</script>
+{% endblock %}

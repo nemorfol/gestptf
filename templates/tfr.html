@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}TFR - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-cash-coin me-2"></i>TFR</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tfrModal" onclick="resetTfrForm()">
+            <i class="bi bi-plus-lg me-1"></i> Nuova Registrazione
+        </button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Valore Attuale TFR</p>
+                    <h5 class="mb-0 fw-bold text-primary">{{ summary.valore_attuale|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Variazione Totale</p>
+                    <h5 class="mb-0 fw-bold {{ 'text-success' if summary and summary.variazione_totale and summary.variazione_totale >= 0 else 'text-danger' }}">
+                        {{ summary.variazione_totale|currency if summary and summary.variazione_totale else '—' }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plotly chart -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-graph-up me-1"></i> Andamento TFR nel Tempo
+        </div>
+        <div class="card-body">
+            <div id="tfrChart" style="height:350px;"></div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Storico TFR
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tfrTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th class="text-end">Valore Netto</th>
+                            <th class="text-end">Variazione</th>
+                            <th>Note</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tfr in records %}
+                        <tr data-id="{{ tfr.id }}">
+                            <td>{{ tfr.data }}</td>
+                            <td class="text-end">{{ tfr.valore_netto|currency }}</td>
+                            <td class="text-end {{ 'text-success' if tfr.variazione and tfr.variazione >= 0 else 'text-danger' }}">
+                                {{ tfr.variazione|currency if tfr.variazione else '—' }}
+                            </td>
+                            <td>{{ tfr.note or '—' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick='editTfr({{ tfr|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteTfr({{ tfr.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal TFR -->
+<div class="modal fade" id="tfrModal" tabindex="-1" aria-labelledby="tfrModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tfrModalLabel">Nuova Registrazione</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="tfrForm">
+                    <input type="hidden" id="tfrId" name="id">
+                    <div class="mb-3">
+                        <label for="tfrData" class="form-label">Data</label>
+                        <input type="date" class="form-control" id="tfrData" name="data" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tfrValoreNetto" class="form-label">Valore Netto</label>
+                        <input type="number" step="0.01" class="form-control" id="tfrValoreNetto" name="valore_netto" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tfrVariazione" class="form-label">Variazione</label>
+                        <input type="number" step="0.01" class="form-control" id="tfrVariazione" name="variazione" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tfrNote" class="form-label">Note</label>
+                        <textarea class="form-control" id="tfrNote" name="note" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveTfr()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var table = PM.DT.init('#tfrTable', {
+        order: [[0, 'desc']],
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    // Plotly chart
+    var records = {{ records|tojson }};
+    if (records.length > 0) {
+        var dates = records.map(function(r) { return r.data; });
+        var values = records.map(function(r) { return r.valore_netto; });
+        Plotly.newPlot('tfrChart', [{
+            x: dates,
+            y: values,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Valore Netto',
+            line: { color: '#198754', width: 2 },
+            marker: { size: 6 }
+        }], {
+            margin: { t: 20, r: 30, b: 40, l: 70 },
+            xaxis: { title: 'Data' },
+            yaxis: { title: 'Valore (\u20ac)', tickformat: ',.0f' },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#dee2e6' : '#212529' }
+        }, { responsive: true });
+    } else {
+        document.getElementById('tfrChart').innerHTML = '<p class="text-center text-muted py-5">Nessun dato disponibile per il grafico</p>';
+    }
+
+    window.resetTfrForm = function() {
+        document.getElementById('tfrForm').reset();
+        document.getElementById('tfrId').value = '';
+        document.getElementById('tfrModalLabel').textContent = 'Nuova Registrazione';
+    };
+
+    window.editTfr = function(tfr) {
+        document.getElementById('tfrId').value = tfr.id;
+        document.getElementById('tfrData').value = tfr.data || '';
+        document.getElementById('tfrValoreNetto').value = tfr.valore_netto || 0;
+        document.getElementById('tfrVariazione').value = tfr.variazione || 0;
+        document.getElementById('tfrNote').value = tfr.note || '';
+        document.getElementById('tfrModalLabel').textContent = 'Modifica Registrazione';
+        new bootstrap.Modal(document.getElementById('tfrModal')).show();
+    };
+
+    window.saveTfr = function() {
+        var form = document.getElementById('tfrForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('tfrId').value;
+        var data = {
+            data: document.getElementById('tfrData').value,
+            valore_netto: parseFloat(document.getElementById('tfrValoreNetto').value) || 0,
+            variazione: parseFloat(document.getElementById('tfrVariazione').value) || 0,
+            note: document.getElementById('tfrNote').value
+        };
+
+        var url = '/tfr/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('tfrModal')).hide();
+            PM.Toast.show('Registrazione salvata con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteTfr = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questa registrazione?', function() {
+            PM.apiCall('/tfr/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Registrazione eliminata', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+})();
+</script>
+{% endblock %}

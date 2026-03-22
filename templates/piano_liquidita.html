@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+
+{% block title %}Piano Liquidit&agrave; - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Piano Liquidit&agrave;</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#liquiditaModal" onclick="resetLiquiditaForm()">
+            <i class="bi bi-plus-lg me-1"></i> Nuovo Record
+        </button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center">
+                    <p class="text-muted mb-1 small">Liquidit&agrave; Totale Accumulata</p>
+                    <h4 class="mb-0 fw-bold text-primary">{{ summary.totale_liquidita_accumulata|currency if summary else '—' }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center">
+                    <p class="text-muted mb-1 small">Ultimo Totale BSF</p>
+                    <h4 class="mb-0 fw-bold text-success">{{ summary.ultimo_totale_bsf|currency if summary and summary.ultimo_totale_bsf is defined else '—' }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center">
+                    <p class="text-muted mb-1 small">Ultimo Totale Altro</p>
+                    <h4 class="mb-0 fw-bold text-info">{{ summary.ultimo_totale_altro|currency if summary and summary.ultimo_totale_altro is defined else '—' }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stacked bar chart -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-bar-chart me-1"></i> Distribuzione Liquidit&agrave; per Mese
+        </div>
+        <div class="card-body">
+            <div id="chartLiquidita" style="width:100%;height:400px;"></div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Dettaglio Liquidit&agrave;
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="liquiditaTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Anno</th>
+                            <th>Data</th>
+                            <th>Mese</th>
+                            <th class="text-end">Liq. Entrata</th>
+                            <th class="text-end">Accumulo BSF</th>
+                            <th class="text-end">Accumulo Altro</th>
+                            <th class="text-end">Totale BSF</th>
+                            <th class="text-end">Totale Altro</th>
+                            <th class="text-end">Liq. Accumulata</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for liq in records %}
+                        <tr data-id="{{ liq.id }}">
+                            <td>{{ liq.anno }}</td>
+                            <td>{{ liq.data }}</td>
+                            <td>{{ liq.mese }}</td>
+                            <td class="text-end">{{ liq.liquidita_entrata|currency }}</td>
+                            <td class="text-end">{{ liq.accumulo_bsf|currency }}</td>
+                            <td class="text-end">{{ liq.accumulo_altro|currency }}</td>
+                            <td class="text-end fw-bold">{{ liq.totale_bsf|currency }}</td>
+                            <td class="text-end fw-bold">{{ liq.totale_altro|currency }}</td>
+                            <td class="text-end">{{ liq.liquidita_accumulata|currency }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick='editLiquidita({{ liq|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteLiquidita({{ liq.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Liquidita -->
+<div class="modal fade" id="liquiditaModal" tabindex="-1" aria-labelledby="liquiditaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="liquiditaModalLabel">Nuovo Record Liquidit&agrave;</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="liquiditaForm">
+                    <input type="hidden" id="liqId" name="id">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="liqAnno" class="form-label">Anno</label>
+                            <input type="number" class="form-control" id="liqAnno" name="anno">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqData" class="form-label">Data</label>
+                            <input type="date" class="form-control" id="liqData" name="data">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqMese" class="form-label">Mese</label>
+                            <input type="number" class="form-control" id="liqMese" name="mese" min="1" max="12">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="liqLiquiditaEntrata" class="form-label">Liquidit&agrave; Entrata</label>
+                            <input type="number" step="0.01" class="form-control" id="liqLiquiditaEntrata" name="liquidita_entrata" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqImportoCd" class="form-label">Importo CD</label>
+                            <input type="number" step="0.01" class="form-control" id="liqImportoCd" name="importo_cd" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqImportoBfpi" class="form-label">Importo BFPi</label>
+                            <input type="number" step="0.01" class="form-control" id="liqImportoBfpi" name="importo_bfpi" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="liqAccumuloBsf" class="form-label">Accumulo BSF</label>
+                            <input type="number" step="0.01" class="form-control" id="liqAccumuloBsf" name="accumulo_bsf" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqAccumuloAltro" class="form-label">Accumulo Altro</label>
+                            <input type="number" step="0.01" class="form-control" id="liqAccumuloAltro" name="accumulo_altro" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqLiquiditaAccumulata" class="form-label">Liq. Accumulata</label>
+                            <input type="number" step="0.01" class="form-control" id="liqLiquiditaAccumulata" name="liquidita_accumulata" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="liqTotaleBsf" class="form-label">Totale BSF</label>
+                            <input type="number" step="0.01" class="form-control" id="liqTotaleBsf" name="totale_bsf" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqTotaleAltro" class="form-label">Totale Altro</label>
+                            <input type="number" step="0.01" class="form-control" id="liqTotaleAltro" name="totale_altro" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="liqMesiPassati" class="form-label">Mesi Passati</label>
+                            <input type="number" class="form-control" id="liqMesiPassati" name="mesi_passati" value="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveLiquidita()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function getPlotlyTheme() {
+        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: isDark ? '#dee2e6' : '#495057' },
+            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f'],
+            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
+        };
+    }
+
+    function getPlotlyLayout(title) {
+        var theme = getPlotlyTheme();
+        return Object.assign({}, theme, {
+            title: { text: title, font: { size: 14 } },
+            margin: { t: 40, r: 20, b: 40, l: 70 },
+            autosize: true
+        });
+    }
+
+    var plotlyConfig = { responsive: true, displayModeBar: false };
+
+    // DataTable
+    var table = PM.DT.init('#liquiditaTable', {
+        order: [[1, 'asc']],
+        scrollX: true,
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    // Stacked bar chart
+    {% if records is defined and records|length > 0 %}
+    var months = [];
+    var bsfByMonth = {};
+    var altroByMonth = {};
+
+    {% for liq in records %}
+    (function() {
+        var d = '{{ liq.data|default("") }}';
+        var month = d ? d.substring(0, 7) : '{{ liq.anno }}-{{ "%02d"|format(liq.mese|default(0)) }}';
+        if (!bsfByMonth[month]) {
+            months.push(month);
+            bsfByMonth[month] = 0;
+            altroByMonth[month] = 0;
+        }
+        bsfByMonth[month] += {{ liq.accumulo_bsf|default(0) }};
+        altroByMonth[month] += {{ liq.accumulo_altro|default(0) }};
+    })();
+    {% endfor %}
+
+    months.sort();
+    var bsfVals = months.map(function(m) { return bsfByMonth[m]; });
+    var altroVals = months.map(function(m) { return altroByMonth[m]; });
+
+    var barTraces = [
+        { x: months, y: bsfVals, name: 'Accumulo BSF', type: 'bar', marker: { color: '#4e79a7' } },
+        { x: months, y: altroVals, name: 'Accumulo Altro', type: 'bar', marker: { color: '#f28e2b' } }
+    ];
+
+    var barLayout = getPlotlyLayout('');
+    barLayout.barmode = 'stack';
+    barLayout.xaxis = Object.assign(barLayout.xaxis || {}, { title: 'Mese' });
+    barLayout.yaxis = Object.assign(barLayout.yaxis || {}, { title: 'Importo (\u20ac)', tickprefix: '\u20ac ' });
+    barLayout.legend = { orientation: 'h', y: -0.2 };
+    Plotly.newPlot('chartLiquidita', barTraces, barLayout, plotlyConfig);
+    {% endif %}
+
+    // Theme toggle
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        setTimeout(function() {
+            {% if records is defined and records|length > 0 %}
+            var bl = getPlotlyLayout('');
+            bl.barmode = 'stack';
+            bl.xaxis = Object.assign(bl.xaxis || {}, { title: 'Mese' });
+            bl.yaxis = Object.assign(bl.yaxis || {}, { title: 'Importo (\u20ac)', tickprefix: '\u20ac ' });
+            bl.legend = { orientation: 'h', y: -0.2 };
+            Plotly.relayout('chartLiquidita', bl);
+            {% endif %}
+        }, 100);
+    });
+
+    // CRUD
+    window.resetLiquiditaForm = function() {
+        document.getElementById('liquiditaForm').reset();
+        document.getElementById('liqId').value = '';
+        document.getElementById('liquiditaModalLabel').textContent = 'Nuovo Record Liquidit\u00e0';
+    };
+
+    window.editLiquidita = function(liq) {
+        document.getElementById('liqId').value = liq.id;
+        document.getElementById('liqAnno').value = liq.anno || '';
+        document.getElementById('liqData').value = liq.data || '';
+        document.getElementById('liqMese').value = liq.mese || '';
+        document.getElementById('liqLiquiditaEntrata').value = liq.liquidita_entrata || 0;
+        document.getElementById('liqImportoCd').value = liq.importo_cd || 0;
+        document.getElementById('liqImportoBfpi').value = liq.importo_bfpi || 0;
+        document.getElementById('liqAccumuloBsf').value = liq.accumulo_bsf || 0;
+        document.getElementById('liqAccumuloAltro').value = liq.accumulo_altro || 0;
+        document.getElementById('liqLiquiditaAccumulata').value = liq.liquidita_accumulata || 0;
+        document.getElementById('liqTotaleBsf').value = liq.totale_bsf || 0;
+        document.getElementById('liqTotaleAltro').value = liq.totale_altro || 0;
+        document.getElementById('liqMesiPassati').value = liq.mesi_passati || 0;
+        document.getElementById('liquiditaModalLabel').textContent = 'Modifica Record Liquidit\u00e0';
+        new bootstrap.Modal(document.getElementById('liquiditaModal')).show();
+    };
+
+    window.saveLiquidita = function() {
+        var form = document.getElementById('liquiditaForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('liqId').value;
+        var data = {
+            anno: parseInt(document.getElementById('liqAnno').value) || 0,
+            data: document.getElementById('liqData').value,
+            mese: parseInt(document.getElementById('liqMese').value) || 0,
+            liquidita_entrata: parseFloat(document.getElementById('liqLiquiditaEntrata').value) || 0,
+            importo_cd: parseFloat(document.getElementById('liqImportoCd').value) || 0,
+            importo_bfpi: parseFloat(document.getElementById('liqImportoBfpi').value) || 0,
+            accumulo_bsf: parseFloat(document.getElementById('liqAccumuloBsf').value) || 0,
+            accumulo_altro: parseFloat(document.getElementById('liqAccumuloAltro').value) || 0,
+            liquidita_accumulata: parseFloat(document.getElementById('liqLiquiditaAccumulata').value) || 0,
+            totale_bsf: parseFloat(document.getElementById('liqTotaleBsf').value) || 0,
+            totale_altro: parseFloat(document.getElementById('liqTotaleAltro').value) || 0,
+            mesi_passati: parseInt(document.getElementById('liqMesiPassati').value) || 0
+        };
+
+        var url = '/piano-liquidita/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('liquiditaModal')).hide();
+            PM.Toast.show('Record salvato con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteLiquidita = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questo record?', function() {
+            PM.apiCall('/piano-liquidita/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Record eliminato', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+})();
+</script>
+{% endblock %}

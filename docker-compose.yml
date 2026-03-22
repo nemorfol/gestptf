@@ -1,0 +1,16 @@
+services:
+  gestptf:
+    build: .
+    container_name: gestptf
+    ports:
+      - "5000:5000"
+    volumes:
+      - gestptf-data:/app/data
+      - gestptf-xlsbase:/app/xlsbase
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Rome
+
+volumes:
+  gestptf-data:
+  gestptf-xlsbase:

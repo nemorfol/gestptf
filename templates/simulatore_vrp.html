@@ -1,0 +1,608 @@
+{% extends 'base.html' %}
+
+{% block title %}Simulatore Vendita con Riserva - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-house-door me-2"></i>Vendita con Riserva di Propriet&agrave;</h4>
+    </div>
+
+    <!-- Saved simulations + immobile selector -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-bookmark me-1"></i> Simulazioni Salvate
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="vrpImmobile" class="form-label">Collega a Immobile</label>
+                    <select class="form-select" id="vrpImmobile" onchange="onImmobileChange(this.value)">
+                        <option value="">— Nessun immobile —</option>
+                        {% for imm in immobili %}
+                        <option value="{{ imm.id }}" data-valore="{{ imm.valore_stimato }}"
+                                data-prezzo="{{ imm.prezzo_acquisto or 0 }}"
+                                data-data="{{ imm.data_acquisto or '' }}">
+                            {{ imm.nome }} ({{ imm.valore_stimato|currency }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="vrpSaved" class="form-label">Carica Simulazione</label>
+                    <select class="form-select" id="vrpSaved" onchange="loadSavedVrp(this.value)">
+                        <option value="">— Nuova simulazione —</option>
+                        {% for s in saved_list %}
+                        <option value="{{ s.id }}">
+                            {{ s.nome }} — {{ s.immobile_nome or 'Senza immobile' }} ({{ s.data_simulazione }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteVrp" style="display:none;" onclick="deleteSavedVrp()">
+                        <i class="bi bi-trash me-1"></i> Elimina
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parameter input -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-sliders me-1"></i> Parametri Simulazione
+        </div>
+        <div class="card-body">
+            <form id="vrpForm">
+                <h6 class="text-muted mb-3"><i class="bi bi-house me-1"></i> Dati Immobile e Vendita</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpValoreVendita" class="form-label">Valore di Vendita (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpValoreVendita"
+                               name="valore_vendita" value="0" required>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpPrezzoAcquisto" class="form-label">Prezzo Acquisto Originale (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpPrezzoAcquisto"
+                               name="prezzo_acquisto" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpDataAcquisto" class="form-label">Data Acquisto</label>
+                        <input type="date" class="form-control" id="vrpDataAcquisto" name="data_acquisto">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpSpeseNotarili" class="form-label">Spese Notarili/Legali (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpSpeseNotarili"
+                               name="spese_notarili" value="0">
+                    </div>
+                </div>
+
+                <h6 class="text-muted mb-3"><i class="bi bi-cash-stack me-1"></i> Piano di Pagamento</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpAnticipo" class="form-label">Anticipo / Acconto (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpAnticipo"
+                               name="anticipo" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpDurataAnni" class="form-label">Durata (anni)</label>
+                        <input type="number" min="1" max="30" class="form-control" id="vrpDurataAnni"
+                               name="durata_anni" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpTassoInteresse" class="form-label">Tasso Interesse (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpTassoInteresse"
+                               name="tasso_interesse" value="0">
+                    </div>
+                </div>
+
+                <h6 class="text-muted mb-3"><i class="bi bi-receipt me-1"></i> Fiscalit&agrave; e Costi Annuali</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpAliquota" class="form-label">Aliquota Plusvalenza (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpAliquota"
+                               name="aliquota_plusvalenza" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpImpostaRegistro" class="form-label">Imposta Registro Annuale (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpImpostaRegistro"
+                               name="imposta_registro" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpImu" class="form-label">IMU Annuale (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpImu"
+                               name="imu_annuale" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpAssicurazione" class="form-label">Assicurazione Annuale (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpAssicurazione"
+                               name="costo_assicurazione" value="0">
+                    </div>
+                </div>
+
+                <h6 class="text-muted mb-3"><i class="bi bi-arrow-left-right me-1"></i> Confronto Costo Opportunit&agrave;</h6>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4 col-lg-3">
+                        <label for="vrpTassoInvestimento" class="form-label">Tasso Investimento Alternativo (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpTassoInvestimento"
+                               name="tasso_investimento" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpNome" class="form-label">Nome Simulazione</label>
+                        <input type="text" class="form-control" id="vrpNome" value="">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpDataInizio" class="form-label">Data Inizio Piano</label>
+                        <input type="date" class="form-control" id="vrpDataInizio">
+                    </div>
+                    <div class="col-md-2 col-lg-1 d-flex align-items-end">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="vrpAttiva">
+                            <label class="form-check-label small" for="vrpAttiva">Attiva</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-lg-3 d-flex align-items-end gap-2">
+                        <button type="button" class="btn btn-primary" onclick="calcolaVrp()">
+                            <i class="bi bi-play-fill me-1"></i> Calcola
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="salvaVrp()">
+                            <i class="bi bi-save me-1"></i> Salva
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results area -->
+    <div id="vrpResults" style="display:none;">
+        <!-- Summary cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Rata Mensile</p>
+                        <h4 class="mb-0 fw-bold text-primary" id="vrpRataMensile">--</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Totale Interessi</p>
+                        <h4 class="mb-0 fw-bold" id="vrpTotaleInteressi">--</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Ricavo Netto VRP</p>
+                        <h4 class="mb-0 fw-bold text-success" id="vrpRicavoNetto">--</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Ricavo Vendita Immediata</p>
+                        <h4 class="mb-0 fw-bold" id="vrpRicavoImmediato">--</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second row of cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Differenza VRP vs Immediata</p>
+                        <h4 class="mb-0 fw-bold" id="vrpDifferenza">--</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Plusvalenza</p>
+                        <h4 class="mb-0 fw-bold" id="vrpPlusvalenza">--</h4>
+                        <small class="text-muted" id="vrpPlusvalenzaNote"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Tasse Plusvalenza</p>
+                        <h4 class="mb-0 fw-bold" id="vrpTassePlusvalenza">--</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">VRP vs Investimento Immediato</p>
+                        <h4 class="mb-0 fw-bold" id="vrpVsInvestito">--</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-transparent border-0 fw-semibold">
+                        <i class="bi bi-bar-chart me-1"></i> Cash Flow Annuale
+                    </div>
+                    <div class="card-body">
+                        <div id="chartVrpCashflow" style="width:100%;height:400px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-transparent border-0 fw-semibold">
+                        <i class="bi bi-graph-up me-1"></i> VRP vs Vendita Immediata Investita
+                    </div>
+                    <div class="card-body">
+                        <div id="chartVrpConfronto" style="width:100%;height:400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs for tables -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-transparent border-0">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active fw-semibold" id="tabCashflow" data-bs-toggle="tab"
+                           href="#paneCashflow" role="tab">
+                            <i class="bi bi-cash-coin me-1"></i> Cash Flow Annuale
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" id="tabAmmortamento" data-bs-toggle="tab"
+                           href="#paneAmmortamento" role="tab">
+                            <i class="bi bi-table me-1"></i> Piano Ammortamento
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body tab-content">
+                <!-- Cash Flow Tab -->
+                <div class="tab-pane fade show active" id="paneCashflow" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="vrpCashflowTable" class="table table-striped table-hover align-middle" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Anno</th>
+                                    <th class="text-end">Entrate Rate</th>
+                                    <th class="text-end">Imp. Registro</th>
+                                    <th class="text-end">IMU</th>
+                                    <th class="text-end">Assicuraz.</th>
+                                    <th class="text-end">Flusso Netto</th>
+                                    <th class="text-end">Flusso Cumulato</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vrpCashflowBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Ammortamento Tab -->
+                <div class="tab-pane fade" id="paneAmmortamento" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="vrpAmmortamentoTable" class="table table-striped table-hover align-middle" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Mese</th>
+                                    <th>Anno</th>
+                                    <th class="text-end">Rata</th>
+                                    <th class="text-end">Quota Capitale</th>
+                                    <th class="text-end">Quota Interessi</th>
+                                    <th class="text-end">Debito Residuo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vrpAmmortamentoBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function getPlotlyTheme() {
+        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: isDark ? '#dee2e6' : '#495057' },
+            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f'],
+            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
+        };
+    }
+
+    function getPlotlyLayout() {
+        var theme = getPlotlyTheme();
+        return Object.assign({}, theme, {
+            margin: { t: 20, r: 20, b: 40, l: 70 },
+            autosize: true
+        });
+    }
+
+    var plotlyConfig = { responsive: true, displayModeBar: false };
+    var dtCashflow = null;
+    var dtAmmortamento = null;
+
+    // --- Immobile selector: pre-fill form ---
+    window.onImmobileChange = function(id) {
+        if (!id) return;
+        var sel = document.getElementById('vrpImmobile');
+        var opt = sel.options[sel.selectedIndex];
+        document.getElementById('vrpValoreVendita').value = opt.dataset.valore || 0;
+        document.getElementById('vrpPrezzoAcquisto').value = opt.dataset.prezzo || 0;
+        document.getElementById('vrpDataAcquisto').value = (opt.dataset.data || '').substring(0, 10);
+    };
+
+    // --- Load saved simulation ---
+    window.loadSavedVrp = function(id) {
+        if (!id) {
+            document.getElementById('btnDeleteVrp').style.display = 'none';
+            return;
+        }
+        document.getElementById('btnDeleteVrp').style.display = '';
+
+        PM.Loading.show();
+        fetch('{{ url_for("simulatore_bp.vrp_page") }}/' + id)
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                PM.Loading.hide();
+                if (!resp.success) { PM.Toast.show('Errore: ' + resp.error, 'error'); return; }
+                var s = resp.data;
+                document.getElementById('vrpImmobile').value = s.immobile_id || '';
+                document.getElementById('vrpValoreVendita').value = s.valore_vendita || 0;
+                document.getElementById('vrpPrezzoAcquisto').value = s.prezzo_acquisto || 0;
+                document.getElementById('vrpDataAcquisto').value = (s.data_acquisto || '').substring(0, 10);
+                document.getElementById('vrpAnticipo').value = s.anticipo || 0;
+                document.getElementById('vrpDurataAnni').value = s.durata_anni || 10;
+                document.getElementById('vrpTassoInteresse').value = s.tasso_interesse || 0;
+                document.getElementById('vrpSpeseNotarili').value = s.spese_notarili || 0;
+                document.getElementById('vrpAliquota').value = s.aliquota_plusvalenza || 26;
+                document.getElementById('vrpImpostaRegistro').value = s.imposta_registro || 0;
+                document.getElementById('vrpImu').value = s.imu_annuale || 0;
+                document.getElementById('vrpAssicurazione').value = s.costo_assicurazione || 0;
+                document.getElementById('vrpTassoInvestimento').value = s.tasso_investimento || 0;
+                document.getElementById('vrpNome').value = s.nome || '';
+                document.getElementById('vrpDataInizio').value = (s.data_inizio_piano || '').substring(0, 10);
+                document.getElementById('vrpAttiva').checked = !!s.attiva;
+                calcolaVrp();
+            })
+            .catch(function(err) {
+                PM.Loading.hide();
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+    };
+
+    // --- Save simulation ---
+    window.salvaVrp = function() {
+        var data = {
+            immobile_id: document.getElementById('vrpImmobile').value || null,
+            nome: document.getElementById('vrpNome').value || 'Simulazione VRP',
+            valore_vendita: parseFloat(document.getElementById('vrpValoreVendita').value) || 0,
+            prezzo_acquisto: parseFloat(document.getElementById('vrpPrezzoAcquisto').value) || 0,
+            data_acquisto: document.getElementById('vrpDataAcquisto').value,
+            anticipo: parseFloat(document.getElementById('vrpAnticipo').value) || 0,
+            durata_anni: parseInt(document.getElementById('vrpDurataAnni').value) || 10,
+            tasso_interesse: parseFloat(document.getElementById('vrpTassoInteresse').value) || 0,
+            spese_notarili: parseFloat(document.getElementById('vrpSpeseNotarili').value) || 0,
+            aliquota_plusvalenza: parseFloat(document.getElementById('vrpAliquota').value) || 26,
+            imposta_registro: parseFloat(document.getElementById('vrpImpostaRegistro').value) || 0,
+            imu_annuale: parseFloat(document.getElementById('vrpImu').value) || 0,
+            costo_assicurazione: parseFloat(document.getElementById('vrpAssicurazione').value) || 0,
+            tasso_investimento: parseFloat(document.getElementById('vrpTassoInvestimento').value) || 0,
+            data_inizio_piano: document.getElementById('vrpDataInizio').value || null,
+            attiva: document.getElementById('vrpAttiva').checked ? 1 : 0
+        };
+
+        // Calculate first to get rata_mensile and ricavo_netto
+        PM.apiCall('{{ url_for("simulatore_bp.vrp_calcola") }}', 'POST', data).then(function(response) {
+            var r = response.data.riepilogo;
+            data.rata_mensile = r.rata_mensile;
+            data.ricavo_netto = r.ricavo_netto_vrp;
+
+            return PM.apiCall('{{ url_for("simulatore_bp.vrp_salva") }}', 'POST', data);
+        }).then(function() {
+            PM.Toast.show('Simulazione salvata con successo', 'success');
+            setTimeout(function() { location.reload(); }, 500);
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    // --- Delete saved simulation ---
+    window.deleteSavedVrp = function() {
+        var id = document.getElementById('vrpSaved').value;
+        if (!id) return;
+        PM.confirmAction('Sei sicuro di voler eliminare questa simulazione?', function() {
+            PM.apiCall('{{ url_for("simulatore_bp.vrp_page") }}/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Simulazione eliminata', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+
+    window.calcolaVrp = function() {
+        var data = {
+            valore_vendita: parseFloat(document.getElementById('vrpValoreVendita').value) || 0,
+            prezzo_acquisto: parseFloat(document.getElementById('vrpPrezzoAcquisto').value) || 0,
+            data_acquisto: document.getElementById('vrpDataAcquisto').value,
+            anticipo: parseFloat(document.getElementById('vrpAnticipo').value) || 0,
+            durata_anni: parseInt(document.getElementById('vrpDurataAnni').value) || 10,
+            tasso_interesse: parseFloat(document.getElementById('vrpTassoInteresse').value) || 0,
+            spese_notarili: parseFloat(document.getElementById('vrpSpeseNotarili').value) || 0,
+            aliquota_plusvalenza: parseFloat(document.getElementById('vrpAliquota').value) || 26,
+            imposta_registro: parseFloat(document.getElementById('vrpImpostaRegistro').value) || 0,
+            imu_annuale: parseFloat(document.getElementById('vrpImu').value) || 0,
+            costo_assicurazione: parseFloat(document.getElementById('vrpAssicurazione').value) || 0,
+            tasso_investimento: parseFloat(document.getElementById('vrpTassoInvestimento').value) || 0
+        };
+
+        PM.Loading.show();
+        PM.apiCall('{{ url_for("simulatore_bp.vrp_calcola") }}', 'POST', data).then(function(response) {
+            PM.Loading.hide();
+            renderResults(response);
+        }).catch(function(err) {
+            PM.Loading.hide();
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    function colorValue(val) {
+        if (val > 0) return 'text-success';
+        if (val < 0) return 'text-danger';
+        return '';
+    }
+
+    function renderResults(response) {
+        document.getElementById('vrpResults').style.display = 'block';
+
+        var r = response.data.riepilogo;
+        var piano = response.data.piano_ammortamento;
+        var cashflow = response.data.cash_flow_annuale;
+        var confronto = response.data.confronto;
+
+        // Summary cards
+        document.getElementById('vrpRataMensile').textContent = PM.Fmt.currency(r.rata_mensile);
+        document.getElementById('vrpTotaleInteressi').textContent = PM.Fmt.currency(r.totale_interessi);
+        document.getElementById('vrpRicavoNetto').textContent = PM.Fmt.currency(r.ricavo_netto_vrp);
+        document.getElementById('vrpRicavoImmediato').textContent = PM.Fmt.currency(r.ricavo_immediato);
+
+        var diffEl = document.getElementById('vrpDifferenza');
+        diffEl.textContent = PM.Fmt.currency(r.differenza_vrp_vs_immediata);
+        diffEl.className = 'mb-0 fw-bold ' + colorValue(r.differenza_vrp_vs_immediata);
+
+        document.getElementById('vrpPlusvalenza').textContent = PM.Fmt.currency(r.plusvalenza);
+        var noteEl = document.getElementById('vrpPlusvalenzaNote');
+        if (r.esente_plusvalenza) {
+            noteEl.textContent = 'Esente (possesso > 5 anni: ' + r.anni_possesso.toFixed(1) + ' anni)';
+            noteEl.className = 'text-success small';
+        } else {
+            noteEl.textContent = 'Tassata (' + r.anni_possesso.toFixed(1) + ' anni di possesso)';
+            noteEl.className = 'text-danger small';
+        }
+
+        document.getElementById('vrpTassePlusvalenza').textContent = PM.Fmt.currency(r.imposta_plusvalenza);
+        document.getElementById('vrpTassePlusvalenza').className = 'mb-0 fw-bold ' + (r.imposta_plusvalenza > 0 ? 'text-danger' : 'text-success');
+
+        var vsInvEl = document.getElementById('vrpVsInvestito');
+        vsInvEl.textContent = PM.Fmt.currency(r.differenza_vrp_vs_investito);
+        vsInvEl.className = 'mb-0 fw-bold ' + colorValue(r.differenza_vrp_vs_investito);
+
+        // --- Chart 1: Cash Flow ---
+        var cfAnni = cashflow.map(function(c) { return 'Anno ' + c.anno; });
+        var cfEntrate = cashflow.map(function(c) { return c.entrate_rate; });
+        var cfUscite = cashflow.map(function(c) {
+            return -(c.spese_notarili + c.imposta_plusvalenza + c.imposta_registro + c.imu + c.assicurazione);
+        });
+        var cfCumulato = cashflow.map(function(c) { return c.flusso_cumulato; });
+
+        var traceCf = [
+            { x: cfAnni, y: cfEntrate, name: 'Entrate', type: 'bar', marker: { color: '#198754' } },
+            { x: cfAnni, y: cfUscite, name: 'Uscite', type: 'bar', marker: { color: '#dc3545' } },
+            { x: cfAnni, y: cfCumulato, name: 'Cumulato', type: 'scatter', mode: 'lines+markers',
+              yaxis: 'y2', line: { color: '#4e79a7', width: 2 }, marker: { size: 6 } }
+        ];
+
+        var layoutCf = getPlotlyLayout();
+        layoutCf.barmode = 'relative';
+        layoutCf.xaxis = Object.assign(layoutCf.xaxis || {}, { title: '' });
+        layoutCf.yaxis = Object.assign(layoutCf.yaxis || {}, { title: 'Importo (\u20ac)', tickformat: ',.0f' });
+        layoutCf.yaxis2 = { title: 'Cumulato (\u20ac)', overlaying: 'y', side: 'right', tickformat: ',.0f',
+                            gridcolor: 'rgba(0,0,0,0)' };
+        layoutCf.legend = { orientation: 'h', y: -0.15 };
+        Plotly.newPlot('chartVrpCashflow', traceCf, layoutCf, plotlyConfig);
+
+        // --- Chart 2: Confronto VRP vs Investimento ---
+        var confAnni = confronto.map(function(c) { return 'Anno ' + c.anno; });
+        var confVrp = confronto.map(function(c) { return c.cumulato_vrp; });
+        var confInv = confronto.map(function(c) { return c.cumulato_investimento; });
+
+        var traceConf = [
+            { x: confAnni, y: confVrp, name: 'VRP Cumulato', type: 'scatter', mode: 'lines+markers',
+              line: { color: '#198754', width: 2 }, marker: { size: 6 } },
+            { x: confAnni, y: confInv, name: 'Vendita Immediata Investita', type: 'scatter', mode: 'lines+markers',
+              line: { color: '#f28e2b', width: 2 }, marker: { size: 6 } }
+        ];
+
+        var layoutConf = getPlotlyLayout();
+        layoutConf.xaxis = Object.assign(layoutConf.xaxis || {}, { title: '' });
+        layoutConf.yaxis = Object.assign(layoutConf.yaxis || {}, { title: 'Valore (\u20ac)', tickformat: ',.0f' });
+        layoutConf.legend = { orientation: 'h', y: -0.15 };
+        Plotly.newPlot('chartVrpConfronto', traceConf, layoutConf, plotlyConfig);
+
+        // --- Table: Cash Flow ---
+        var cfBody = document.getElementById('vrpCashflowBody');
+        cfBody.innerHTML = '';
+        cashflow.forEach(function(c) {
+            var spese = c.spese_notarili + c.imposta_plusvalenza + c.imposta_registro + c.imu + c.assicurazione;
+            cfBody.innerHTML += '<tr>' +
+                '<td>' + (c.anno === 0 ? 'Anticipo' : c.anno) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(c.entrate_rate) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(c.imposta_registro) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(c.imu) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(c.assicurazione) + '</td>' +
+                '<td class="text-end ' + colorValue(c.flusso_netto) + ' fw-bold">' + PM.Fmt.currency(c.flusso_netto) + '</td>' +
+                '<td class="text-end ' + colorValue(c.flusso_cumulato) + ' fw-bold">' + PM.Fmt.currency(c.flusso_cumulato) + '</td>' +
+                '</tr>';
+        });
+
+        if (dtCashflow) { dtCashflow.destroy(); }
+        dtCashflow = PM.DT.init('#vrpCashflowTable', { paging: false, searching: false, info: false, ordering: false });
+
+        // --- Table: Piano Ammortamento ---
+        var amBody = document.getElementById('vrpAmmortamentoBody');
+        amBody.innerHTML = '';
+        piano.forEach(function(p) {
+            amBody.innerHTML += '<tr>' +
+                '<td>' + p.mese + '</td>' +
+                '<td>' + p.anno + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(p.rata) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(p.quota_capitale) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(p.quota_interessi) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(p.debito_residuo) + '</td>' +
+                '</tr>';
+        });
+
+        if (dtAmmortamento) { dtAmmortamento.destroy(); }
+        dtAmmortamento = PM.DT.init('#vrpAmmortamentoTable', { paging: true, pageLength: 24, searching: false, info: true, ordering: false });
+
+        // Scroll to results
+        document.getElementById('vrpResults').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Theme toggle
+    var themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', function() {
+            setTimeout(function() {
+                if (document.getElementById('vrpResults').style.display !== 'none') {
+                    Plotly.relayout('chartVrpCashflow', getPlotlyLayout());
+                    Plotly.relayout('chartVrpConfronto', getPlotlyLayout());
+                }
+            }, 100);
+        });
+    }
+})();
+</script>
+{% endblock %}

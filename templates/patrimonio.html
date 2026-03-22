@@ -1,0 +1,538 @@
+{% extends 'base.html' %}
+
+{% block title %}Patrimonio - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-wallet2 me-2"></i>Patrimonio</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#patrimonioModal" onclick="resetPatrimonioForm()">
+            <i class="bi bi-plus-lg me-1"></i> Nuovo Record
+        </button>
+    </div>
+
+    <!-- Summary cards -->
+    {% if records|length > 0 %}
+    {% set latest = records[-1] %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Patrimonio Totale</p>
+                    <h5 class="mb-0 fw-bold" id="summaryTotale">—</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Patrimonio Netto</p>
+                    <h5 class="mb-0 fw-bold" id="summaryNetto">—</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Patrimonio Adj (-20% Imm.)</p>
+                    <h5 class="mb-0 fw-bold" id="summaryAdj">—</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Storico Patrimonio
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="patrimonioTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th class="text-end">Imm. Esteri</th>
+                            <th class="text-end">Imm. Italia</th>
+                            <th class="text-end">Fondo Pens.</th>
+                            <th class="text-end">ETF</th>
+                            <th class="text-end">BFP</th>
+                            <th class="text-end">BTP</th>
+                            <th class="text-end">Cash</th>
+                            <th class="text-end">CD</th>
+                            <th class="text-end">TFR Netto</th>
+                            <th class="text-end">Totale</th>
+                            <th class="text-end">Debiti</th>
+                            <th class="text-end">Netto</th>
+                            <th class="text-end">Var. %</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in records %}
+                        <tr data-id="{{ p.id }}">
+                            <td>{{ p.data }}</td>
+                            <td class="text-end">{{ p.immobili_esteri|currency }}</td>
+                            <td class="text-end">{{ p.immobile_italia|currency }}</td>
+                            <td class="text-end">{{ p.fondo_pensione|currency }}</td>
+                            <td class="text-end">{{ p.etf|currency }}</td>
+                            <td class="text-end">{{ p.bfp|currency }}</td>
+                            <td class="text-end">{{ p.btp|currency }}</td>
+                            <td class="text-end">{{ p.cash|currency }}</td>
+                            <td class="text-end">{{ p.cd|currency }}</td>
+                            <td class="text-end">{{ p.tfr_netto|currency }}</td>
+                            <td class="text-end fw-bold">{{ p.totali.totale|currency if p.totali else '—' }}</td>
+                            <td class="text-end text-danger">{{ p.debiti|currency }}</td>
+                            <td class="text-end fw-bold">{{ p.totali.totale_netto|currency if p.totali else '—' }}</td>
+                            {% if loop.first %}
+                            <td class="text-end text-muted">—</td>
+                            {% else %}
+                            {% set netto_corrente = p.totali.totale_netto if p.totali else 0 %}
+                            {% set netto_prec = records[loop.index0 - 1].totali.totale_netto if records[loop.index0 - 1].totali else 0 %}
+                            {% if netto_prec and netto_prec > 0 %}
+                            {% set var_pct = ((netto_corrente - netto_prec) / netto_prec * 100) %}
+                            <td class="text-end fw-bold {{ 'text-success' if var_pct >= 0 else 'text-danger' }}">
+                                <i class="bi bi-{{ 'caret-up-fill' if var_pct >= 0 else 'caret-down-fill' }} me-1"></i>{{ "%.2f"|format(var_pct) }}%
+                            </td>
+                            {% else %}
+                            <td class="text-end text-muted">—</td>
+                            {% endif %}
+                            {% endif %}
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick='editPatrimonio({{ p|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deletePatrimonio({{ p.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stacked area chart -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-bar-chart-fill me-1"></i> Evoluzione Classi di Asset
+        </div>
+        <div class="card-body">
+            <div id="chartStackedArea" style="width:100%;height:420px;"></div>
+        </div>
+    </div>
+
+    <!-- Allocation % chart -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-percent me-1"></i> Allocazione Percentuale nel Tempo
+        </div>
+        <div class="card-body">
+            <div id="chartAllocationPct" style="width:100%;height:420px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Patrimonio -->
+<div class="modal fade" id="patrimonioModal" tabindex="-1" aria-labelledby="patrimonioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="patrimonioModalLabel">Nuovo Record Patrimonio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="patrimonioForm">
+                    <input type="hidden" id="patId" name="id">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="patData" class="form-label">Data</label>
+                            <input type="date" class="form-control" id="patData" name="data" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="patCopyFrom" class="form-label">Copia valori da</label>
+                            <select class="form-select" id="patCopyFrom" onchange="copyFromRecord(this.value)">
+                                <option value="">— Non copiare —</option>
+                                {% for p in records|reverse %}
+                                <option value="{{ p.id }}" {{ 'selected' if loop.first }}>{{ p.data }}{% if loop.first %} (ultimo){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <!-- VRP impact alert -->
+                    <div id="vrpAlert" class="alert alert-info small mb-3" style="display:none;">
+                        <i class="bi bi-house-door me-1"></i> <strong>VRP attiva:</strong> <span id="vrpAlertText"></span>
+                        <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="applicaVrp()">
+                            <i class="bi bi-check-lg me-1"></i>Applica
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="patImmobiliEsteri" class="form-label">Immobili Esteri</label>
+                            <input type="number" step="0.01" class="form-control" id="patImmobiliEsteri" name="immobili_esteri" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="patImmobileItalia" class="form-label">Immobile Italia</label>
+                            <input type="number" step="0.01" class="form-control" id="patImmobileItalia" name="immobile_italia" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="patFondoPensione" class="form-label">Fondo Pensione</label>
+                            <input type="number" step="0.01" class="form-control" id="patFondoPensione" name="fondo_pensione" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="patEtf" class="form-label">ETF</label>
+                            <input type="number" step="0.01" class="form-control" id="patEtf" name="etf" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="patBfp" class="form-label">BFP</label>
+                            <input type="number" step="0.01" class="form-control" id="patBfp" name="bfp" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="patBtp" class="form-label">BTP</label>
+                            <input type="number" step="0.01" class="form-control" id="patBtp" name="btp" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="patCash" class="form-label">Cash</label>
+                            <input type="number" step="0.01" class="form-control" id="patCash" name="cash" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="patCd" class="form-label">CD</label>
+                            <input type="number" step="0.01" class="form-control" id="patCd" name="cd" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="patTfrNetto" class="form-label">TFR Netto</label>
+                            <input type="number" step="0.01" class="form-control" id="patTfrNetto" name="tfr_netto" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="patDebiti" class="form-label">Debiti</label>
+                            <input type="number" step="0.01" class="form-control" id="patDebiti" name="debiti" value="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="savePatrimonio()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function getPlotlyTheme() {
+        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: isDark ? '#dee2e6' : '#495057' },
+            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'],
+            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
+        };
+    }
+
+    function getPlotlyLayout(title) {
+        var theme = getPlotlyTheme();
+        return Object.assign({}, theme, {
+            title: { text: title, font: { size: 14 } },
+            margin: { t: 40, r: 20, b: 40, l: 70 },
+            autosize: true
+        });
+    }
+
+    var plotlyConfig = { responsive: true, displayModeBar: false };
+
+    // Summary cards
+    {% if records|length > 0 %}
+    {% set latest = records[-1] %}
+    document.getElementById('summaryTotale').textContent = PM.Fmt.currency({{ latest.totali.totale|default(0) }});
+    document.getElementById('summaryNetto').textContent = PM.Fmt.currency({{ latest.totali.totale_netto|default(0) }});
+    document.getElementById('summaryAdj').textContent = PM.Fmt.currency({{ latest.totali.totale_adj|default(0) }});
+    {% endif %}
+
+    // DataTable
+    var table = PM.DT.init('#patrimonioTable', {
+        order: [[0, 'desc']],
+        scrollX: true,
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    // Charts data
+    {% if records|length > 0 %}
+    var assetClasses = ['immobili_esteri', 'immobile_italia', 'fondo_pensione', 'etf', 'bfp', 'btp', 'cash', 'cd', 'tfr_netto'];
+    var assetLabels = ['Imm. Esteri', 'Imm. Italia', 'Fondo Pens.', 'ETF', 'BFP', 'BTP', 'Cash', 'CD', 'TFR Netto'];
+    var dates = [];
+    var dataByClass = {};
+
+    assetClasses.forEach(function(c) { dataByClass[c] = []; });
+
+    {% for p in records %}
+    dates.push('{{ p.data }}');
+    {% for ac in ['immobili_esteri', 'immobile_italia', 'fondo_pensione', 'etf', 'bfp', 'btp', 'cash', 'cd', 'tfr_netto'] %}
+    dataByClass['{{ ac }}'].push({{ p[ac]|default(0) }});
+    {% endfor %}
+    {% endfor %}
+
+    // Stacked area chart
+    var stackedTraces = assetClasses.map(function(c, i) {
+        return {
+            x: dates,
+            y: dataByClass[c],
+            name: assetLabels[i],
+            type: 'scatter',
+            mode: 'lines',
+            stackgroup: 'one',
+            line: { width: 0.5 }
+        };
+    });
+
+    var stackedLayout = getPlotlyLayout('');
+    stackedLayout.xaxis = Object.assign(stackedLayout.xaxis || {}, { type: 'date' });
+    stackedLayout.yaxis = Object.assign(stackedLayout.yaxis || {}, { tickprefix: '\u20ac ' });
+    stackedLayout.legend = { orientation: 'h', y: -0.15 };
+    Plotly.newPlot('chartStackedArea', stackedTraces, stackedLayout, plotlyConfig);
+
+    // Allocation % chart
+    var pctTraces = assetClasses.map(function(c, i) {
+        var pctValues = dataByClass[c].map(function(val, idx) {
+            var total = 0;
+            assetClasses.forEach(function(cc) { total += dataByClass[cc][idx]; });
+            return total > 0 ? (val / total * 100) : 0;
+        });
+        return {
+            x: dates,
+            y: pctValues,
+            name: assetLabels[i],
+            type: 'scatter',
+            mode: 'lines',
+            stackgroup: 'one',
+            groupnorm: 'percent'
+        };
+    });
+
+    var pctLayout = getPlotlyLayout('');
+    pctLayout.xaxis = Object.assign(pctLayout.xaxis || {}, { type: 'date' });
+    pctLayout.yaxis = Object.assign(pctLayout.yaxis || {}, { ticksuffix: '%', range: [0, 100] });
+    pctLayout.legend = { orientation: 'h', y: -0.15 };
+    Plotly.newPlot('chartAllocationPct', pctTraces, pctLayout, plotlyConfig);
+    {% endif %}
+
+    // Theme change listener
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        setTimeout(function() {
+            {% if records|length > 0 %}
+            var sl = getPlotlyLayout('');
+            sl.xaxis = Object.assign(sl.xaxis || {}, { type: 'date' });
+            sl.yaxis = Object.assign(sl.yaxis || {}, { tickprefix: '\u20ac ' });
+            sl.legend = { orientation: 'h', y: -0.15 };
+            Plotly.relayout('chartStackedArea', sl);
+
+            var pl = getPlotlyLayout('');
+            pl.xaxis = Object.assign(pl.xaxis || {}, { type: 'date' });
+            pl.yaxis = Object.assign(pl.yaxis || {}, { ticksuffix: '%', range: [0, 100] });
+            pl.legend = { orientation: 'h', y: -0.15 };
+            Plotly.relayout('chartAllocationPct', pl);
+            {% endif %}
+        }, 100);
+    });
+
+    // CRUD
+    var fields = ['immobili_esteri','immobile_italia','fondo_pensione','etf','bfp','btp','cash','cd','tfr_netto','debiti'];
+    var fieldIds = {
+        immobili_esteri: 'patImmobiliEsteri', immobile_italia: 'patImmobileItalia',
+        fondo_pensione: 'patFondoPensione', etf: 'patEtf', bfp: 'patBfp', btp: 'patBtp',
+        cash: 'patCash', cd: 'patCd', tfr_netto: 'patTfrNetto', debiti: 'patDebiti'
+    };
+
+    // All records for copy-from
+    var allRecords = {{ records|tojson }};
+    var recordsById = {};
+    allRecords.forEach(function(r) { recordsById[r.id] = r; });
+
+    window.copyFromRecord = function(id) {
+        if (!id) {
+            fields.forEach(function(f) {
+                document.getElementById(fieldIds[f]).value = 0;
+            });
+            return;
+        }
+        var rec = recordsById[parseInt(id)];
+        if (rec) {
+            fields.forEach(function(f) {
+                document.getElementById(fieldIds[f]).value = rec[f] || 0;
+            });
+        }
+        // After copying base values, override with live values
+        applyLiveValues();
+    };
+
+    // --- Live values from sections (BFP, Fineco ETF/BTP/CD, FP, TFR) ---
+    function applyLiveValues() {
+        var isNew = !document.getElementById('patId').value;
+        if (!isNew) return;
+
+        var dataVal = document.getElementById('patData').value || '';
+        var btn = document.querySelector('[onclick="savePatrimonio()"]');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Caricamento valori...'; }
+
+        fetch('/patrimonio/valori-live?data=' + encodeURIComponent(dataVal))
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                if (!resp.success) return;
+                var d = resp.data;
+                var liveFields = {
+                    bfp: 'patBfp', fondo_pensione: 'patFondoPensione',
+                    tfr_netto: 'patTfrNetto', etf: 'patEtf', btp: 'patBtp', cd: 'patCd'
+                };
+                for (var key in liveFields) {
+                    if (d[key] != null) {
+                        document.getElementById(liveFields[key]).value = d[key];
+                    }
+                }
+            })
+            .catch(function() {})
+            .finally(function() {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Salva'; }
+            });
+    }
+
+    // --- VRP integration ---
+    var vrpData = null;
+
+    function checkVrpImpatto() {
+        var dataVal = document.getElementById('patData').value;
+        var isNew = !document.getElementById('patId').value;
+        if (!dataVal || !isNew) {
+            document.getElementById('vrpAlert').style.display = 'none';
+            return;
+        }
+
+        fetch('/patrimonio/vrp-impatto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: dataVal })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (!resp.success || !resp.data.has_vrp) {
+                document.getElementById('vrpAlert').style.display = 'none';
+                vrpData = null;
+                return;
+            }
+            vrpData = resp.data;
+            var det = vrpData.dettagli[0];
+            var text = det.nome + ' — Credito residuo: ' + PM.Fmt.currency(det.credito_residuo) +
+                       ' | Incassato: ' + PM.Fmt.currency(det.totale_incassato) +
+                       ' | Mesi: ' + det.mesi_trascorsi;
+            if (det.piano_completato) text += ' (COMPLETATO)';
+            document.getElementById('vrpAlertText').textContent = text;
+            document.getElementById('vrpAlert').style.display = '';
+        })
+        .catch(function() {
+            document.getElementById('vrpAlert').style.display = 'none';
+        });
+    }
+
+    window.applicaVrp = function() {
+        if (!vrpData || !vrpData.dettagli.length) return;
+        // For each VRP, adjust the immobile value to credito_residuo
+        vrpData.dettagli.forEach(function(det) {
+            if (det.immobile_tipo === 'italia') {
+                document.getElementById('patImmobileItalia').value = det.credito_residuo;
+            } else if (det.immobile_tipo === 'estero') {
+                document.getElementById('patImmobiliEsteri').value = det.credito_residuo;
+            }
+        });
+        PM.Toast.show('Valori VRP applicati', 'success');
+        document.getElementById('vrpAlert').style.display = 'none';
+    };
+
+    // Listen for date change
+    document.getElementById('patData').addEventListener('change', function() {
+        applyLiveValues();
+        checkVrpImpatto();
+    });
+
+    window.resetPatrimonioForm = function() {
+        document.getElementById('patrimonioForm').reset();
+        document.getElementById('patId').value = '';
+        document.getElementById('patData').value = new Date().toISOString().split('T')[0];
+        document.getElementById('patrimonioModalLabel').textContent = 'Nuovo Record Patrimonio';
+        document.getElementById('patCopyFrom').closest('.col-md-6').style.display = '';
+        // Default: copy from latest record
+        var select = document.getElementById('patCopyFrom');
+        if (select.options.length > 1) {
+            select.selectedIndex = 1;
+            copyFromRecord(select.value);
+        }
+        // Apply live values from sections (BFP, etc.)
+        applyLiveValues();
+        // Check VRP impact for today's date
+        checkVrpImpatto();
+    };
+
+    window.editPatrimonio = function(p) {
+        document.getElementById('patId').value = p.id;
+        document.getElementById('patData').value = p.data;
+        fields.forEach(function(f) {
+            document.getElementById(fieldIds[f]).value = p[f] || 0;
+        });
+        document.getElementById('patrimonioModalLabel').textContent = 'Modifica Record Patrimonio';
+        document.getElementById('patCopyFrom').closest('.col-md-6').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('patrimonioModal')).show();
+    };
+
+    window.savePatrimonio = function() {
+        var form = document.getElementById('patrimonioForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('patId').value;
+        var data = { data: document.getElementById('patData').value };
+        fields.forEach(function(f) {
+            data[f] = parseFloat(document.getElementById(fieldIds[f]).value) || 0;
+        });
+
+        var url = '/patrimonio/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('patrimonioModal')).hide();
+            PM.Toast.show('Record salvato con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deletePatrimonio = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questo record?', function() {
+            PM.apiCall('/patrimonio/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Record eliminato', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+})();
+</script>
+{% endblock %}

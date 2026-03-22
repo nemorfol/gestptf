@@ -1,0 +1,2059 @@
+{% extends 'base.html' %}
+
+{% block title %}Guida - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- HEADER                                                      -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-book text-primary me-2"></i>Guida &amp; Aiuto</h2>
+            <p class="text-muted mb-0">Documentazione completa di GestPTF &mdash; gestione patrimonio personale</p>
+        </div>
+        <span class="badge bg-primary-subtle text-primary-emphasis fs-6">
+            <i class="bi bi-info-circle me-1"></i>v1.0
+        </span>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TOP NAV TABS                                                -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <ul class="nav nav-tabs mb-4" id="guidaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-panoramica" data-bs-toggle="tab"
+                    data-bs-target="#panoramica" type="button" role="tab"
+                    aria-controls="panoramica" aria-selected="true">
+                <i class="bi bi-eye me-1"></i>Panoramica
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-quickstart" data-bs-toggle="tab"
+                    data-bs-target="#quickstart" type="button" role="tab"
+                    aria-controls="quickstart" aria-selected="false">
+                <i class="bi bi-rocket-takeoff me-1"></i>Guida Rapida
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-moduli" data-bs-toggle="tab"
+                    data-bs-target="#moduli" type="button" role="tab"
+                    aria-controls="moduli" aria-selected="false">
+                <i class="bi bi-grid-3x3-gap me-1"></i>Moduli
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-tutorial" data-bs-toggle="tab"
+                    data-bs-target="#tutorial" type="button" role="tab"
+                    aria-controls="tutorial" aria-selected="false">
+                <i class="bi bi-mortarboard me-1"></i>Tutorial
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-faq" data-bs-toggle="tab"
+                    data-bs-target="#faq" type="button" role="tab"
+                    aria-controls="faq" aria-selected="false">
+                <i class="bi bi-question-circle me-1"></i>FAQ
+            </button>
+        </li>
+    </ul>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TAB CONTENT                                                 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="guidaTabContent">
+
+        <!-- ============================================================ -->
+        <!--  TAB 1 — PANORAMICA                                          -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade show active" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+
+            <!-- Cos'è GestPTF -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-briefcase-fill text-info me-2"></i>Cos'è GestPTF?</h4>
+                    <p class="card-text fs-5">
+                        <strong>GestPTF</strong> è un'applicazione web locale per la <em>gestione completa del patrimonio personale</em>.
+                        Permette di monitorare investimenti, immobili, liquidità, previdenza, debiti e simulare scenari futuri,
+                        tutto da un'unica interfaccia accessibile dal browser.
+                    </p>
+                    <div class="alert alert-info d-flex align-items-start gap-2 mb-0">
+                        <i class="bi bi-shield-lock fs-5 mt-1"></i>
+                        <div>
+                            <strong>Privacy totale:</strong> tutti i dati restano sul tuo computer. Nessun dato viene inviato a server esterni.
+                            Il database è un file SQLite locale nella cartella <code>data/</code>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Funzionalità principali -->
+            <h5 class="mb-3"><i class="bi bi-stars text-warning me-2"></i>Funzionalità Principali</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-start border-primary border-4">
+                        <div class="card-body">
+                            <h6><i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard</h6>
+                            <p class="mb-0 small">Panoramica completa del patrimonio con grafici interattivi, torta allocazione e evoluzione storica.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-start border-success border-4">
+                        <div class="card-body">
+                            <h6><i class="bi bi-graph-up-arrow text-success me-2"></i>Investimenti</h6>
+                            <p class="mb-0 small">Gestione ETF, Obbligazioni/BTP e Buoni Fruttiferi Postali con calcolo rendimenti automatico.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-start border-warning border-4">
+                        <div class="card-body">
+                            <h6><i class="bi bi-houses text-warning me-2"></i>Immobili</h6>
+                            <p class="mb-0 small">Tracciamento proprietà immobiliari con storico valutazioni e rendita annua.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-start border-info border-4">
+                        <div class="card-body">
+                            <h6><i class="bi bi-piggy-bank text-info me-2"></i>Previdenza</h6>
+                            <p class="mb-0 small">Fondo Pensione e TFR con grafici di evoluzione nel tempo.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-start border-danger border-4">
+                        <div class="card-body">
+                            <h6><i class="bi bi-calculator text-danger me-2"></i>Simulatori</h6>
+                            <p class="mb-0 small">BSF vs Ordinario, BTPi indicizzati, vendita riserva proprietà, piano liquidità, simulazione investimento.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-start border-secondary border-4">
+                        <div class="card-body">
+                            <h6><i class="bi bi-arrow-left-right text-secondary me-2"></i>Import / Export</h6>
+                            <p class="mb-0 small">Importa da Excel originale, RPOL, PDF CDP. Esporta in CSV e Excel con grafici.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Architettura -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-diagram-3 text-secondary me-2"></i>Architettura</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr><td><i class="bi bi-filetype-py text-success me-1"></i><strong>Backend</strong></td><td>Python 3 + Flask</td></tr>
+                                    <tr><td><i class="bi bi-window text-primary me-1"></i><strong>Frontend</strong></td><td>Bootstrap 5.3 + Chart.js + DataTables</td></tr>
+                                    <tr><td><i class="bi bi-database text-warning me-1"></i><strong>Database</strong></td><td>SQLite (locale, file <code>data/gestptf.db</code>)</td></tr>
+                                    <tr><td><i class="bi bi-globe text-info me-1"></i><strong>Servizi esterni</strong></td><td>Nessuno &mdash; tutto locale</td></tr>
+                                    <tr><td><i class="bi bi-box text-secondary me-1"></i><strong>Deployment</strong></td><td>Docker oppure <code>python app.py</code></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-success mb-0">
+                                <i class="bi bi-check-circle me-1"></i><strong>Come avviare:</strong>
+                                <ol class="mb-0 mt-2">
+                                    <li>Apri un terminale nella cartella del progetto</li>
+                                    <li>Esegui <code>python app.py</code></li>
+                                    <li>Apri il browser su <a href="http://127.0.0.1:5000" class="alert-link">http://127.0.0.1:5000</a></li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Struttura navigazione -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-layout-sidebar text-primary me-2"></i>Navigazione</h5>
+                    <p>La barra laterale sinistra organizza le sezioni in gruppi:</p>
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body py-2 px-3">
+                                    <small class="text-uppercase fw-bold text-muted">Panoramica</small>
+                                    <ul class="list-unstyled mb-0 mt-1 small">
+                                        <li><i class="bi bi-speedometer2 me-1"></i>Dashboard</li>
+                                        <li><i class="bi bi-wallet2 me-1"></i>Patrimonio</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body py-2 px-3">
+                                    <small class="text-uppercase fw-bold text-muted">Investimenti</small>
+                                    <ul class="list-unstyled mb-0 mt-1 small">
+                                        <li><i class="bi bi-graph-up-arrow me-1"></i>ETF</li>
+                                        <li><i class="bi bi-bank me-1"></i>Obbligazioni / BTP</li>
+                                        <li><i class="bi bi-postcard me-1"></i>BFP</li>
+                                        <li><i class="bi bi-houses me-1"></i>Immobili</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body py-2 px-3">
+                                    <small class="text-uppercase fw-bold text-muted">Previdenza &amp; Liquidità</small>
+                                    <ul class="list-unstyled mb-0 mt-1 small">
+                                        <li><i class="bi bi-piggy-bank me-1"></i>Fondo Pensione</li>
+                                        <li><i class="bi bi-safe me-1"></i>TFR</li>
+                                        <li><i class="bi bi-cash-stack me-1"></i>Liquidità</li>
+                                        <li><i class="bi bi-credit-card-2-back me-1"></i>Debiti</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body py-2 px-3">
+                                    <small class="text-uppercase fw-bold text-muted">Simulatori &amp; Strumenti</small>
+                                    <ul class="list-unstyled mb-0 mt-1 small">
+                                        <li><i class="bi bi-calculator me-1"></i>Simulatore BSF</li>
+                                        <li><i class="bi bi-graph-up me-1"></i>Simulatore BTPi</li>
+                                        <li><i class="bi bi-house-door me-1"></i>Vendita Riserva Prop.</li>
+                                        <li><i class="bi bi-clipboard-data me-1"></i>Piano Liquidità</li>
+                                        <li><i class="bi bi-pie-chart me-1"></i>Simulazione Investimento</li>
+                                        <li><i class="bi bi-arrow-left-right me-1"></i>Import / Export</li>
+                                        <li><i class="bi bi-gear me-1"></i>Impostazioni</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /panoramica -->
+
+        <!-- ============================================================ -->
+        <!--  TAB 2 — GUIDA RAPIDA                                         -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade" id="quickstart" role="tabpanel" aria-labelledby="tab-quickstart">
+
+            <div class="alert alert-primary d-flex align-items-center gap-2 mb-4">
+                <i class="bi bi-rocket-takeoff fs-4"></i>
+                <div>
+                    <strong>Guida Rapida:</strong> segui questi 5 passaggi per configurare GestPTF dalla prima esecuzione
+                    fino ad avere una panoramica completa del tuo patrimonio.
+                </div>
+            </div>
+
+            <!-- STEP 1 -->
+            <div class="card border-start border-4 border-primary shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="badge bg-primary rounded-circle me-2">1</span>
+                        Primo Avvio
+                    </h5>
+                    <p>Al primo avvio, l'applicazione crea automaticamente un database SQLite vuoto. Non ci sono dati precaricati.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-terminal me-2"></i>Avvia l'applicazione</h6>
+                                    <code class="d-block p-2 bg-dark text-light rounded">python app.py</code>
+                                    <small class="text-muted mt-2 d-block">Vedrai il messaggio: <em>"GestPTF - Gestione Patrimonio &mdash; http://127.0.0.1:5000"</em></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-globe me-2"></i>Apri il browser</h6>
+                                    <p class="mb-1">Vai su <strong>http://127.0.0.1:5000</strong></p>
+                                    <small class="text-muted">La Dashboard sarà vuota. Il passo successivo è importare i dati.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                        Vai subito alla sezione <strong>Import / Export</strong>
+                        <i class="bi bi-arrow-left-right mx-1"></i>
+                        nella barra laterale per caricare i tuoi dati.
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="card border-start border-4 border-success shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="badge bg-success rounded-circle me-2">2</span>
+                        Importa i tuoi Dati
+                    </h5>
+                    <p>GestPTF supporta diverse fonti di importazione. Ecco le principali:</p>
+
+                    <div class="row g-3">
+                        <!-- Import Excel originale -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success-subtle">
+                                    <i class="bi bi-file-earmark-excel me-1"></i><strong>Excel Originale</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="small">Importa il file <code>Monitor Portafoglio.xlsx</code> con tutti i dati del patrimonio.</p>
+                                    <p class="small mb-2"><strong>Come fare:</strong></p>
+                                    <ol class="small mb-2">
+                                        <li>Vai a <strong>Import / Export</strong></li>
+                                        <li>Sezione "Importa Excel Originale"</li>
+                                        <li>Seleziona il file .xlsx</li>
+                                        <li>Clicca <button class="btn btn-success btn-sm disabled" style="font-size:.7rem">
+                                            <i class="bi bi-upload"></i> Importa</button></li>
+                                    </ol>
+                                    <span class="badge bg-success-subtle text-success">Consigliato al primo avvio</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Import BFP da RPOL -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary-subtle">
+                                    <i class="bi bi-postcard me-1"></i><strong>BFP da RPOL Excel</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="small">Importa l'elenco BFP scaricato da <strong>poste.it</strong> (sezione RPOL).</p>
+                                    <p class="small mb-2"><strong>Come fare:</strong></p>
+                                    <ol class="small mb-2">
+                                        <li>Accedi a poste.it &rarr; I tuoi prodotti &rarr; Risparmio Postale</li>
+                                        <li>Scarica l'elenco in formato Excel</li>
+                                        <li>Vai a <strong>BFP</strong> &rarr; <button class="btn btn-outline-primary btn-sm disabled" style="font-size:.7rem">
+                                            <i class="bi bi-file-earmark-excel"></i> Importa da Excel</button></li>
+                                    </ol>
+                                    <span class="badge bg-primary-subtle text-primary">Per BFP</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Import Fogli Informativi PDF -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning-subtle">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i><strong>Fogli Informativi PDF</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="small">Importa i PDF CDP con le tabelle dei coefficienti per il calcolo interessi BFP.</p>
+                                    <p class="small mb-2"><strong>Come fare:</strong></p>
+                                    <ol class="small mb-2">
+                                        <li>Scarica i fogli informativi dal sito CDP</li>
+                                        <li>Vai a <strong>BFP</strong> &rarr; <button class="btn btn-outline-warning btn-sm disabled" style="font-size:.7rem">
+                                            <i class="bi bi-file-earmark-pdf"></i> Importa PDF</button></li>
+                                        <li>Seleziona uno o più PDF</li>
+                                    </ol>
+                                    <span class="badge bg-warning-subtle text-warning">Necessario per calcolo valori</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="card border-start border-4 border-warning shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="badge bg-warning text-dark rounded-circle me-2">3</span>
+                        Configura le Impostazioni
+                    </h5>
+                    <p>Alcune funzionalità richiedono parametri personalizzati. Vai a
+                        <i class="bi bi-gear me-1"></i><strong>Impostazioni</strong> e configura:</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card bg-body-secondary h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-calendar-heart fs-2 text-danger"></i>
+                                    <h6 class="mt-2">Data di Nascita</h6>
+                                    <p class="small mb-0">Necessaria per il calcolo della <strong>rendita BFP 65-80 anni</strong> (BSF e BO65).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-body-secondary h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-houses fs-2 text-warning"></i>
+                                    <h6 class="mt-2">Sconto % Immobili</h6>
+                                    <p class="small mb-0">Percentuale di sconto per il valore adjusted nella Dashboard (estero e Italia separati).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-body-secondary h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-sliders fs-2 text-info"></i>
+                                    <h6 class="mt-2">Parametri Simulazione</h6>
+                                    <p class="small mb-0">Tassi, orizzonti temporali e altri parametri per i vari simulatori.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="card border-start border-4 border-info shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="badge bg-info text-dark rounded-circle me-2">4</span>
+                        Esplora la Dashboard
+                    </h5>
+                    <p>La Dashboard <i class="bi bi-speedometer2"></i> è la pagina principale e mostra una panoramica completa:</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-card-heading text-primary me-1"></i>Card di riepilogo</h6>
+                            <ul class="small">
+                                <li><strong>Totale Patrimonio:</strong> somma di tutti gli asset</li>
+                                <li><strong>Netto:</strong> patrimonio meno debiti</li>
+                                <li><strong>Adjusted:</strong> con lo sconto % immobili applicato via slider interattivo</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-pie-chart text-success me-1"></i>Grafici interattivi</h6>
+                            <ul class="small">
+                                <li><strong>Torta allocazione:</strong> distribuzione % per asset class</li>
+                                <li><strong>Evoluzione:</strong> stacked area con linea adjusted</li>
+                                <li>Clicca sui punti dell'evoluzione per vedere l'allocazione storica</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                        Usa lo <strong>slider interattivo</strong> nella Dashboard per variare la percentuale di sconto
+                        sugli immobili (esteri e Italia separatamente) e vedere in tempo reale l'impatto sul valore adjusted.
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 5 -->
+            <div class="card border-start border-4 border-danger shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="badge bg-danger rounded-circle me-2">5</span>
+                        Gestisci il Patrimonio
+                    </h5>
+                    <p>La sezione <i class="bi bi-wallet2"></i> <strong>Patrimonio</strong> tiene traccia dell'evoluzione complessiva nel tempo.</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-plus-circle text-success me-2"></i>Nuovo Record</h6>
+                                    <ol class="small mb-0">
+                                        <li><strong>Clicca</strong> <button class="btn btn-success btn-sm disabled" style="font-size:.7rem">
+                                            <i class="bi bi-plus-lg"></i> Nuovo Record</button></li>
+                                        <li><strong>Copia</strong> dall'ultimo record per precompilare i campi</li>
+                                        <li><strong>Valori live:</strong> BFP, ETF, BTP si aggiornano automaticamente dalle rispettive sezioni</li>
+                                        <li><strong>Modifica manualmente</strong> i campi che sono cambiati (immobili, cash, ecc.)</li>
+                                        <li><strong>Salva</strong> il record</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-body-secondary">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-percent text-info me-2"></i>Colonna Var. %</h6>
+                                    <p class="small mb-2">Ogni record mostra la variazione percentuale rispetto al record precedente per ciascun asset.</p>
+                                    <p class="small mb-0">I valori in <span class="text-success">verde</span> indicano un aumento,
+                                        in <span class="text-danger">rosso</span> una diminuzione.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                        Ricordati di creare un nuovo record di Patrimonio almeno una volta al mese per avere uno storico accurato
+                        dell'evoluzione del tuo patrimonio.
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /quickstart -->
+
+        <!-- ============================================================ -->
+        <!--  TAB 3 — MODULI                                               -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade" id="moduli" role="tabpanel" aria-labelledby="tab-moduli">
+
+            <div class="alert alert-secondary mb-4">
+                <i class="bi bi-grid-3x3-gap me-1"></i>
+                Clicca su ciascun modulo per espandere la documentazione dettagliata con campi, funzionalità e suggerimenti.
+            </div>
+
+            <div class="accordion" id="accordionModuli">
+
+                <!-- ──────────── DASHBOARD ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headDashboard">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseDashboard" aria-expanded="false" aria-controls="collapseDashboard">
+                            <i class="bi bi-speedometer2 text-primary me-2"></i>
+                            <strong>Dashboard</strong>
+                            <span class="badge bg-primary-subtle text-primary ms-2">Panoramica</span>
+                        </button>
+                    </h2>
+                    <div id="collapseDashboard" class="accordion-collapse collapse" aria-labelledby="headDashboard"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>La Dashboard è la pagina principale dell'applicazione. Mostra un riepilogo completo del patrimonio
+                               con card di sintesi, grafici interattivi e tabelle riassuntive.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-card-heading me-1"></i>Card di Riepilogo</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Card</th><th>Descrizione</th><th>Calcolo</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge bg-primary">Totale</span></td>
+                                        <td>Valore complessivo lordo di tutti gli asset</td>
+                                        <td>Somma di ETF + BTP + BFP + Immobili + FP + TFR + Liquidità</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-success">Netto</span></td>
+                                        <td>Patrimonio al netto dei debiti</td>
+                                        <td>Totale &minus; Debiti (mutuo, prestiti, ecc.)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-info">Adjusted</span></td>
+                                        <td>Patrimonio con sconto immobili applicato</td>
+                                        <td>Netto con immobili scontati della % impostata via slider</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-sliders me-1"></i>Slider Interattivo % Immobili</h6>
+                            <p>Nella sezione Dashboard trovi uno slider (o due slider separati) per impostare la
+                               percentuale di sconto sugli immobili:</p>
+                            <ul>
+                                <li><strong>Immobili Esteri:</strong> sconto % applicato al valore degli immobili all'estero</li>
+                                <li><strong>Immobili Italia:</strong> sconto % applicato al valore degli immobili in Italia</li>
+                            </ul>
+                            <p>Muovendo lo slider, il valore <em>Adjusted</em> nella card e nei grafici si aggiorna in tempo reale.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-pie-chart me-1"></i>Grafici</h6>
+                            <ul>
+                                <li><strong>Torta Allocazione:</strong> distribuzione percentuale per asset class (ETF, BTP, BFP, Immobili, ecc.)</li>
+                                <li><strong>Evoluzione Patrimonio:</strong> grafico stacked area con l'andamento di ogni asset nel tempo, più una linea per il valore adjusted</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-toggles me-1"></i>Toggle Modalità Visualizzazione</h6>
+                            <p>Puoi cambiare la modalità di visualizzazione dei grafici:</p>
+                            <ul>
+                                <li><strong>Valore &euro;:</strong> valori assoluti in euro</li>
+                                <li><strong>% vs Precedente:</strong> variazione percentuale rispetto al periodo precedente</li>
+                                <li><strong>% vs Inizio:</strong> variazione percentuale rispetto al primo record</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Riepilogo ETF e Obbligazioni</h6>
+                            <p>In fondo alla Dashboard trovi tabelle riassuntive con il riepilogo degli ETF e delle Obbligazioni/BTP attualmente in portafoglio.</p>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Clicca su un punto del grafico Evoluzione per vedere la composizione dell'allocazione
+                                in quella specifica data storica.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── ETF ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headETF">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseETF" aria-expanded="false" aria-controls="collapseETF">
+                            <i class="bi bi-graph-up-arrow text-success me-2"></i>
+                            <strong>ETF</strong>
+                            <span class="badge bg-success-subtle text-success ms-2">Investimenti</span>
+                        </button>
+                    </h2>
+                    <div id="collapseETF" class="accordion-collapse collapse" aria-labelledby="headETF"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Gestione completa degli ETF (Exchange-Traded Funds) in portafoglio con operazioni CRUD,
+                               riepilogo per titolo e toggle per mostrare/nascondere i venduti.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Campi</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Campo</th><th>Descrizione</th><th>Esempio</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>ISIN</code></td><td>Codice identificativo internazionale</td><td>IE00B4L5Y983</td></tr>
+                                    <tr><td><code>Nome</code></td><td>Nome dell'ETF</td><td>iShares Core MSCI World</td></tr>
+                                    <tr><td><code>Data Acquisto</code></td><td>Data di acquisto</td><td>15/03/2024</td></tr>
+                                    <tr><td><code>Quantità</code></td><td>Numero di quote</td><td>50</td></tr>
+                                    <tr><td><code>Prezzo</code></td><td>Prezzo unitario di acquisto</td><td>78,50</td></tr>
+                                    <tr><td><code>Commissioni</code></td><td>Commissioni pagate all'acquisto</td><td>5,00</td></tr>
+                                    <tr><td><code>Costo Totale</code></td><td>Calcolato: Quantità &times; Prezzo + Commissioni</td><td>3.930,00</td></tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-pencil-square me-1"></i>Operazioni</h6>
+                            <ul>
+                                <li><button class="btn btn-success btn-sm disabled" style="font-size:.75rem"><i class="bi bi-plus-lg"></i> Nuovo ETF</button>
+                                    &mdash; Aggiunge un nuovo ETF al portafoglio</li>
+                                <li><button class="btn btn-outline-primary btn-sm disabled" style="font-size:.75rem"><i class="bi bi-pencil"></i></button>
+                                    &mdash; Modifica un ETF esistente</li>
+                                <li><button class="btn btn-outline-danger btn-sm disabled" style="font-size:.75rem"><i class="bi bi-trash"></i></button>
+                                    &mdash; Elimina un ETF</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-eye-slash me-1"></i>Toggle "Mostra Venduti"</h6>
+                            <p>Gli ETF venduti non vengono eliminati dal database ma contrassegnati come venduti.
+                               Usa il toggle <strong>"Mostra venduti"</strong> per visualizzare o nascondere gli ETF venduti nella tabella.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-clipboard-data me-1"></i>Riepilogo per Titolo</h6>
+                            <p>Sotto la tabella principale trovi un riepilogo aggregato per ISIN/nome con il totale investito,
+                               la quantità complessiva e il costo medio.</p>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Per segnare un ETF come venduto senza eliminarlo, usa la funzione di modifica e imposta lo stato su "venduto".
+                                Così mantieni lo storico delle operazioni.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── OBBLIGAZIONI / BTP ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headBond">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseBond" aria-expanded="false" aria-controls="collapseBond">
+                            <i class="bi bi-bank text-info me-2"></i>
+                            <strong>Obbligazioni / BTP</strong>
+                            <span class="badge bg-info-subtle text-info ms-2">Investimenti</span>
+                        </button>
+                    </h2>
+                    <div id="collapseBond" class="accordion-collapse collapse" aria-labelledby="headBond"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Gestione delle obbligazioni e BTP (Buoni del Tesoro Poliennali) con tracciamento completo
+                               di costi, ratei e ritenute.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Campi</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Campo</th><th>Descrizione</th><th>Esempio</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>ISIN</code></td><td>Codice identificativo</td><td>IT0005544082</td></tr>
+                                    <tr><td><code>Nome</code></td><td>Denominazione del titolo</td><td>BTP 4,35% 01/11/2033</td></tr>
+                                    <tr><td><code>Data</code></td><td>Data di acquisto</td><td>01/11/2023</td></tr>
+                                    <tr><td><code>Quantità</code></td><td>Valore nominale</td><td>10.000</td></tr>
+                                    <tr><td><code>Prezzo</code></td><td>Prezzo di acquisto (% del nominale)</td><td>99,50</td></tr>
+                                    <tr><td><code>Commissioni</code></td><td>Commissioni bancarie</td><td>0,00</td></tr>
+                                    <tr><td><code>Rateo Lordo</code></td><td>Rateo di interessi maturato alla data di acquisto</td><td>125,00</td></tr>
+                                    <tr><td><code>Ritenuta Rateo</code></td><td>Ritenuta fiscale sul rateo</td><td>15,63</td></tr>
+                                    <tr><td><code>Ritenuta Dis.</code></td><td>Ritenuta sul disaggio di emissione</td><td>0,00</td></tr>
+                                    <tr><td><code>Uscita</code></td><td>Importo totale sborsato</td><td>10.059,37</td></tr>
+                                    <tr><td><code>Coeff. Indicizzazione</code></td><td>Per BTP indicizzati all'inflazione</td><td>1,0523</td></tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-pencil-square me-1"></i>Operazioni</h6>
+                            <ul>
+                                <li><button class="btn btn-success btn-sm disabled" style="font-size:.75rem"><i class="bi bi-plus-lg"></i> Nuova Obbligazione</button>
+                                    &mdash; Aggiunge un nuovo BTP/obbligazione</li>
+                                <li>Modifica <i class="bi bi-pencil"></i> e Elimina <i class="bi bi-trash text-danger"></i> come per gli ETF</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-eye-slash me-1"></i>Toggle "Mostra Venduti"</h6>
+                            <p>Come per gli ETF, puoi segnare obbligazioni come vendute e usare il toggle per mostrarle/nasconderle.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-clipboard-data me-1"></i>Riepilogo per Titolo</h6>
+                            <p>Aggregazione per ISIN con totale nominale, costo medio e valore complessivo.</p>
+
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                                Per i BTP indicizzati all'inflazione, ricorda di aggiornare periodicamente il
+                                <strong>Coefficiente di Indicizzazione</strong> dal sito del Tesoro.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── BFP ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headBFP">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseBFP" aria-expanded="false" aria-controls="collapseBFP">
+                            <i class="bi bi-postcard text-warning me-2"></i>
+                            <strong>BFP (Buoni Fruttiferi Postali)</strong>
+                            <span class="badge bg-warning-subtle text-warning ms-2">Investimenti</span>
+                            <span class="badge bg-danger ms-1">Dettagliato</span>
+                        </button>
+                    </h2>
+                    <div id="collapseBFP" class="accordion-collapse collapse" aria-labelledby="headBFP"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Il modulo BFP è il più ricco dell'applicazione. Gestisce tutti i tipi di Buoni Fruttiferi
+                               Postali emessi da Cassa Depositi e Prestiti (CDP), con calcolo automatico dei rendimenti
+                               tramite i coefficienti ufficiali.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-collection me-1"></i>Tipologie Supportate</h6>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge bg-warning-subtle text-warning border">Obiettivo 65 (BO65)</span>
+                                <span class="badge bg-primary-subtle text-primary border">Soluzione Futuro (BSF)</span>
+                                <span class="badge bg-success-subtle text-success border">Ordinario</span>
+                                <span class="badge bg-info-subtle text-info border">4x4</span>
+                                <span class="badge bg-secondary-subtle text-secondary border">Indicizzati Inflazione</span>
+                                <span class="badge bg-dark-subtle text-dark border">Altri tipi</span>
+                            </div>
+
+                            <!-- Importazione RPOL -->
+                            <div class="card border-primary mb-3">
+                                <div class="card-header bg-primary-subtle">
+                                    <h6 class="mb-0"><i class="bi bi-file-earmark-excel me-1"></i>Importa da Excel RPOL</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Importa automaticamente l'elenco BFP dal file Excel scaricato dal portale di Poste Italiane (RPOL).</p>
+                                    <ol>
+                                        <li><strong>Accedi</strong> a <a href="https://www.poste.it" target="_blank">poste.it</a></li>
+                                        <li><strong>Vai</strong> a "I tuoi prodotti" &rarr; "Risparmio Postale Online"</li>
+                                        <li><strong>Scarica</strong> l'elenco BFP in formato Excel (.xlsx)</li>
+                                        <li><strong>In GestPTF,</strong> vai alla sezione BFP</li>
+                                        <li><strong>Clicca</strong>
+                                            <button class="btn btn-outline-primary btn-sm disabled" style="font-size:.75rem">
+                                                <i class="bi bi-file-earmark-excel"></i> Importa da Excel
+                                            </button></li>
+                                        <li><strong>Seleziona</strong> il file scaricato e conferma</li>
+                                    </ol>
+                                    <div class="alert alert-info mb-0">
+                                        <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                        L'importazione aggiorna i BFP esistenti e aggiunge quelli nuovi senza duplicare.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Importazione PDF -->
+                            <div class="card border-warning mb-3">
+                                <div class="card-header bg-warning-subtle">
+                                    <h6 class="mb-0"><i class="bi bi-file-earmark-pdf me-1"></i>Importa Fogli Informativi PDF</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>I <strong>Fogli Informativi</strong> sono documenti PDF pubblicati da CDP che contengono le
+                                       tabelle dei coefficienti di rimborso per ciascuna serie di BFP. Questi coefficienti
+                                       sono necessari per calcolare il valore attuale di ogni buono.</p>
+                                    <ol>
+                                        <li><strong>Scarica</strong> i fogli informativi dal sito di CDP per le serie dei tuoi BFP</li>
+                                        <li><strong>Clicca</strong>
+                                            <button class="btn btn-outline-warning btn-sm disabled" style="font-size:.75rem">
+                                                <i class="bi bi-file-earmark-pdf"></i> Importa PDF
+                                            </button></li>
+                                        <li><strong>Seleziona</strong> uno o più file PDF</li>
+                                        <li>L'app estrae automaticamente i coefficienti dalle tabelle nel PDF</li>
+                                    </ol>
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                                        Senza i coefficienti importati, i pulsanti
+                                        <button class="btn btn-outline-secondary btn-sm disabled" style="font-size:.7rem">Ricalcola Valori</button>
+                                        e <button class="btn btn-outline-secondary btn-sm disabled" style="font-size:.7rem">Piano Rimborso</button>
+                                        saranno disabilitati.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ricalcola Valori -->
+                            <div class="card border-success mb-3">
+                                <div class="card-header bg-success-subtle">
+                                    <h6 class="mb-0"><i class="bi bi-arrow-repeat me-1"></i>Ricalcola Valori</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Il pulsante <button class="btn btn-success btn-sm disabled" style="font-size:.75rem">
+                                        <i class="bi bi-arrow-repeat"></i> Ricalcola Valori</button>
+                                        ricalcola il valore corrente di tutti i BFP utilizzando i coefficienti CDP importati.</p>
+                                    <p>Per ogni buono, l'app:</p>
+                                    <ol>
+                                        <li>Determina la serie e il tipo di BFP</li>
+                                        <li>Cerca il coefficiente corrispondente agli anni/bimestri trascorsi dalla sottoscrizione</li>
+                                        <li>Calcola il valore lordo e netto (al netto della ritenuta fiscale 12,5%)</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <!-- Piano Rimborso -->
+                            <div class="card border-info mb-3">
+                                <div class="card-header bg-info-subtle">
+                                    <h6 class="mb-0"><i class="bi bi-calendar3 me-1"></i>Piano Rimborso</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Per ogni BFP puoi aprire il <strong>Piano Rimborso</strong>: un modal che mostra:</p>
+                                    <ul>
+                                        <li><strong>Grafico a barre:</strong> evoluzione del valore lordo e netto nel tempo</li>
+                                        <li><strong>Tabella ammortamento:</strong> valore del buono per ogni periodo (bimestre/anno) dalla sottoscrizione alla scadenza</li>
+                                        <li>Interessi maturati, ritenuta fiscale, valore netto rimborsabile</li>
+                                    </ul>
+                                    <div class="alert alert-info mb-0">
+                                        <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                        Usa il Piano Rimborso per capire qual è il momento migliore per riscuotere un buono.
+                                        I BFP maturano interessi a scaglioni (tipicamente bimestrali), quindi conviene attendere
+                                        il completamento dello scaglione in corso.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rendita 65-80 anni -->
+                            <div class="card border-danger mb-3">
+                                <div class="card-header bg-danger-subtle">
+                                    <h6 class="mb-0"><i class="bi bi-calendar-heart me-1"></i>Rendita 65-80 Anni</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Per i buoni di tipo <strong>BSF (Soluzione Futuro)</strong> e <strong>BO65 (Obiettivo 65)</strong>,
+                                       l'app calcola la rendita che riceverai tra i 65 e gli 80 anni, basata sulla tua data di nascita.</p>
+
+                                    <h6>Come funziona:</h6>
+                                    <ol>
+                                        <li><strong>Inserisci la data di nascita</strong> nella sezione Riepilogo Rendita (o nelle Impostazioni)</li>
+                                        <li>L'app calcola quando compierai 65 anni</li>
+                                        <li>Per ogni BFP BSF/BO65, determina il valore alla scadenza e la rata mensile</li>
+                                        <li>Mostra la <strong>rata mensile netta</strong> e la <strong>rata mensile lorda</strong></li>
+                                        <li>Calcola il <strong>totale rendita</strong> sull'arco dei 15 anni (65-80)</li>
+                                    </ol>
+
+                                    <table class="table table-sm table-bordered mt-3">
+                                        <thead class="table-light">
+                                            <tr><th>Informazione</th><th>Descrizione</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td><strong>Rata mensile lorda</strong></td><td>Importo mensile prima delle tasse</td></tr>
+                                            <tr><td><strong>Rata mensile netta</strong></td><td>Importo mensile al netto della ritenuta 12,5%</td></tr>
+                                            <tr><td><strong>Rendita totale</strong></td><td>Somma di tutte le rate su 15 anni (180 mesi)</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Riepilogo Rendita Totale -->
+                            <div class="card border-dark mb-3">
+                                <div class="card-header bg-dark-subtle">
+                                    <h6 class="mb-0"><i class="bi bi-cash-coin me-1"></i>Riepilogo Rendita Totale</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Vista aggregata di tutte le rendite da BSF e BO65. Mostra il totale mensile netto
+                                       che riceverai sommando tutti i buoni di tipo rendita.</p>
+                                </div>
+                            </div>
+
+                            <!-- Bollo -->
+                            <div class="card border-secondary mb-3">
+                                <div class="card-header bg-body-secondary">
+                                    <h6 class="mb-0"><i class="bi bi-receipt me-1"></i>Bollo</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>I BFP sono soggetti a un'imposta di bollo annuale dello <strong>0,20%</strong> sul valore di rimborso.</p>
+                                    <div class="alert alert-success mb-0">
+                                        <i class="bi bi-check-circle me-1"></i><strong>Esenzione:</strong>
+                                        Se il valore complessivo di tutti i BFP intestati alla stessa persona è
+                                        <strong>inferiore a 5.000 &euro;</strong>, il bollo non è dovuto.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pulsanti disabilitati -->
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i><strong>Perché alcuni pulsanti sono disabilitati?</strong><br>
+                                I pulsanti <em>Ricalcola Valori</em> e <em>Piano Rimborso</em> richiedono che siano stati
+                                importati i coefficienti dai Fogli Informativi PDF. Se non hai ancora importato i PDF,
+                                questi pulsanti appariranno disabilitati con un tooltip che spiega il motivo.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── IMMOBILI ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headImmobili">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseImmobili" aria-expanded="false" aria-controls="collapseImmobili">
+                            <i class="bi bi-houses text-warning me-2"></i>
+                            <strong>Immobili</strong>
+                            <span class="badge bg-warning-subtle text-warning ms-2">Investimenti</span>
+                        </button>
+                    </h2>
+                    <div id="collapseImmobili" class="accordion-collapse collapse" aria-labelledby="headImmobili"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Gestione delle proprietà immobiliari con distinzione tra Italia ed estero, storico valutazioni
+                               e rendita annua.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Campi Principali</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Campo</th><th>Descrizione</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>Nome / Descrizione</code></td><td>Identificativo della proprietà</td></tr>
+                                    <tr><td><code>Tipo</code></td><td>Estero o Italia (influisce sullo sconto in Dashboard)</td></tr>
+                                    <tr><td><code>Valore Corrente</code></td><td>Valore di mercato attuale stimato</td></tr>
+                                    <tr><td><code>Rendita Annua</code></td><td>Eventuale reddito da locazione</td></tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-clock-history me-1"></i>Storico Valutazioni</h6>
+                            <p>Per ogni immobile puoi registrare più valutazioni nel tempo. L'app tiene traccia dello
+                               storico e mostra l'evoluzione del valore.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-pencil-square me-1"></i>Operazioni</h6>
+                            <ul>
+                                <li><button class="btn btn-success btn-sm disabled" style="font-size:.75rem"><i class="bi bi-plus-lg"></i> Nuovo Immobile</button>
+                                    &mdash; Aggiunge una nuova proprietà</li>
+                                <li><strong>Aggiorna valore:</strong> modifica la valutazione corrente</li>
+                                <li><strong>Aggiungi storico:</strong> registra una nuova valutazione mantenendo le precedenti</li>
+                            </ul>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                La distinzione tra immobili esteri e italiani è importante perché nella Dashboard
+                                puoi applicare percentuali di sconto diverse tramite gli slider dedicati.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── FONDO PENSIONE ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headFP">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseFP" aria-expanded="false" aria-controls="collapseFP">
+                            <i class="bi bi-piggy-bank text-info me-2"></i>
+                            <strong>Fondo Pensione</strong>
+                            <span class="badge bg-info-subtle text-info ms-2">Previdenza</span>
+                        </button>
+                    </h2>
+                    <div id="collapseFP" class="accordion-collapse collapse" aria-labelledby="headFP"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Tracciamento del valore del fondo pensione complementare con contributi, rendimenti e grafico di evoluzione.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Funzionalità</h6>
+                            <ul>
+                                <li><strong>Registra il valore:</strong> inserisci periodicamente il valore aggiornato del fondo</li>
+                                <li><strong>Contributi:</strong> tieni traccia dei versamenti effettuati</li>
+                                <li><strong>Rendimenti:</strong> registra i rendimenti maturati</li>
+                                <li><strong>Grafico evoluzione:</strong> visualizza l'andamento del fondo nel tempo</li>
+                            </ul>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Aggiorna il valore del fondo pensione almeno trimestralmente, in corrispondenza
+                                dell'estratto conto del gestore.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── TFR ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headTFR">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseTFR" aria-expanded="false" aria-controls="collapseTFR">
+                            <i class="bi bi-safe text-secondary me-2"></i>
+                            <strong>TFR</strong>
+                            <span class="badge bg-secondary-subtle text-secondary ms-2">Previdenza</span>
+                        </button>
+                    </h2>
+                    <div id="collapseTFR" class="accordion-collapse collapse" aria-labelledby="headTFR"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Gestione del Trattamento di Fine Rapporto (TFR) con tracciamento del valore nel tempo.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Funzionalità</h6>
+                            <ul>
+                                <li><strong>Valore corrente:</strong> inserisci il valore aggiornato del TFR maturato</li>
+                                <li><strong>Variazioni:</strong> registra le variazioni (accantonamenti, anticipi, liquidazioni)</li>
+                                <li><strong>Grafico:</strong> evoluzione del TFR nel tempo</li>
+                            </ul>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Il valore del TFR lo trovi nella busta paga o nel CU (Certificazione Unica) annuale.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── LIQUIDITA' ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headLiquidita">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseLiquidita" aria-expanded="false" aria-controls="collapseLiquidita">
+                            <i class="bi bi-cash-stack text-success me-2"></i>
+                            <strong>Liquidità</strong>
+                            <span class="badge bg-success-subtle text-success ms-2">Previdenza &amp; Liquidità</span>
+                        </button>
+                    </h2>
+                    <div id="collapseLiquidita" class="accordion-collapse collapse" aria-labelledby="headLiquidita"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Gestione della liquidità disponibile in varie forme: contanti, certificati di deposito (CD),
+                               XEON (ETF monetario), depositi bancari e altro.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Tipologie</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Tipo</th><th>Descrizione</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><span class="badge bg-success">Cash</span></td><td>Contanti su conti correnti</td></tr>
+                                    <tr><td><span class="badge bg-primary">CD</span></td><td>Certificati di Deposito</td></tr>
+                                    <tr><td><span class="badge bg-info">XEON</span></td><td>ETF monetario (es. Xtrackers EUR Overnight Rate)</td></tr>
+                                    <tr><td><span class="badge bg-warning text-dark">Depositi</span></td><td>Conti deposito vincolati/liberi</td></tr>
+                                    <tr><td><span class="badge bg-secondary">Altro</span></td><td>Altre forme di liquidità</td></tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-pie-chart me-1"></i>Grafico Distribuzione</h6>
+                            <p>Un grafico a torta mostra la distribuzione percentuale tra le diverse tipologie di liquidità.</p>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Mantieni aggiornata questa sezione per avere un quadro preciso della liquidità
+                                disponibile, utile anche per il Piano Liquidità.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── DEBITI ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headDebiti">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseDebiti" aria-expanded="false" aria-controls="collapseDebiti">
+                            <i class="bi bi-credit-card-2-back text-danger me-2"></i>
+                            <strong>Debiti</strong>
+                            <span class="badge bg-danger-subtle text-danger ms-2">Previdenza &amp; Liquidità</span>
+                        </button>
+                    </h2>
+                    <div id="collapseDebiti" class="accordion-collapse collapse" aria-labelledby="headDebiti"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Tracciamento dei debiti: mutui, prestiti e altre passività.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Tipologie</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Tipo</th><th>Descrizione</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><span class="badge bg-danger">Mutuo</span></td><td>Mutuo ipotecario con barra di avanzamento (residuo/iniziale)</td></tr>
+                                    <tr><td><span class="badge bg-warning text-dark">Prestito</span></td><td>Prestiti personali</td></tr>
+                                    <tr><td><span class="badge bg-secondary">Altro</span></td><td>Altre passività</td></tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-bar-chart me-1"></i>Barra di Avanzamento Mutuo</h6>
+                            <p>Per i mutui, l'app mostra una <strong>barra di progresso</strong> che indica visivamente
+                               quanto debito residuo resta rispetto all'importo iniziale del mutuo. Include anche
+                               la <strong>rata mensile</strong> corrente.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-pencil-square me-1"></i>Operazioni</h6>
+                            <ul>
+                                <li><button class="btn btn-success btn-sm disabled" style="font-size:.75rem"><i class="bi bi-plus-lg"></i> Nuovo Debito</button>
+                                    &mdash; Aggiunge un nuovo debito</li>
+                                <li>Aggiorna il debito residuo periodicamente</li>
+                                <li>I debiti vengono sottratti nel calcolo del patrimonio netto in Dashboard</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── PATRIMONIO ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headPatrimonio">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapsePatrimonio" aria-expanded="false" aria-controls="collapsePatrimonio">
+                            <i class="bi bi-wallet2 text-primary me-2"></i>
+                            <strong>Patrimonio (Riepilogo)</strong>
+                            <span class="badge bg-primary-subtle text-primary ms-2">Panoramica</span>
+                        </button>
+                    </h2>
+                    <div id="collapsePatrimonio" class="accordion-collapse collapse" aria-labelledby="headPatrimonio"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>La sezione Patrimonio è il cuore del tracciamento storico. Ogni record rappresenta uno
+                               "snapshot" del tuo patrimonio in una data specifica, aggregando i valori da tutte le sezioni.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Struttura</h6>
+                            <p>Ogni record contiene i valori di: ETF, BTP, BFP, Immobili, Fondo Pensione, TFR,
+                               Liquidità e Debiti. La colonna <strong>Var. %</strong> mostra la variazione rispetto
+                               al record precedente.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-plus-circle me-1"></i>Nuovo Record</h6>
+                            <ol>
+                                <li><strong>Clicca</strong> <button class="btn btn-success btn-sm disabled" style="font-size:.75rem">
+                                    <i class="bi bi-plus-lg"></i> Nuovo Record</button></li>
+                                <li><strong>"Copia da precedente":</strong> precompila tutti i campi con i valori dell'ultimo record</li>
+                                <li><strong>Valori live:</strong> i campi BFP, ETF, BTP vengono aggiornati automaticamente
+                                    con i valori correnti calcolati nelle rispettive sezioni</li>
+                                <li><strong>Modifica manualmente</strong> i campi che sono cambiati (es. immobili, cash)</li>
+                                <li><strong>Salva</strong></li>
+                            </ol>
+
+                            <h6 class="mt-3"><i class="bi bi-bar-chart me-1"></i>Grafici</h6>
+                            <ul>
+                                <li><strong>Stacked Area Evolution:</strong> evoluzione di ogni asset class nel tempo come aree impilate</li>
+                                <li><strong>Allocazione % nel tempo:</strong> come è cambiata la composizione percentuale del patrimonio</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-house-door me-1"></i>Integrazione VRP</h6>
+                            <p>Se hai attivato una simulazione di <strong>Vendita Riserva Proprietà</strong>, il suo impatto
+                               viene riflesso nei record di patrimonio (se la funzione è attiva).</p>
+
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                                Crea un nuovo record di patrimonio regolarmente (almeno mensile) per avere grafici
+                                di evoluzione significativi. La funzione "Copia da precedente" rende l'operazione molto rapida.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── SIMULATORE BSF ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headSimBSF">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseSimBSF" aria-expanded="false" aria-controls="collapseSimBSF">
+                            <i class="bi bi-calculator text-danger me-2"></i>
+                            <strong>Simulatore BSF</strong>
+                            <span class="badge bg-danger-subtle text-danger ms-2">Simulatori</span>
+                        </button>
+                    </h2>
+                    <div id="collapseSimBSF" class="accordion-collapse collapse" aria-labelledby="headSimBSF"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Confronto tra <strong>Buono Soluzione Futuro (BSF)</strong> e <strong>BFP Ordinario</strong>
+                               per valutare quale sia più conveniente in base ai tuoi parametri.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-sliders me-1"></i>Parametri di Input</h6>
+                            <ul>
+                                <li>Importo da investire</li>
+                                <li>Durata dell'investimento</li>
+                                <li>Serie BFP da confrontare</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-bar-chart me-1"></i>Risultati</h6>
+                            <ul>
+                                <li><strong>Grafico comparativo:</strong> evoluzione del valore di entrambi i prodotti nel tempo</li>
+                                <li><strong>Tabella dettagliata:</strong> valori per ogni periodo con differenza assoluta e percentuale</li>
+                                <li>Evidenzia quale prodotto è più conveniente per l'orizzonte temporale scelto</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── SIMULATORE BTPi ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headSimBTPi">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseSimBTPi" aria-expanded="false" aria-controls="collapseSimBTPi">
+                            <i class="bi bi-graph-up text-primary me-2"></i>
+                            <strong>Simulatore BTPi</strong>
+                            <span class="badge bg-primary-subtle text-primary ms-2">Simulatori</span>
+                        </button>
+                    </h2>
+                    <div id="collapseSimBTPi" class="accordion-collapse collapse" aria-labelledby="headSimBTPi"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Proiezione del rendimento di un <strong>BTP indicizzato all'inflazione</strong> con calcolo
+                               della cedola mensile effettiva e confronto con scenari inflattivi.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-sliders me-1"></i>Parametri</h6>
+                            <ul>
+                                <li>Valore nominale investito</li>
+                                <li>Tasso cedolare reale</li>
+                                <li>Scenari di inflazione (bassa, media, alta)</li>
+                                <li>Durata residua del titolo</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-currency-euro me-1"></i>Risultati</h6>
+                            <ul>
+                                <li><strong>Cedola mensile netta:</strong> quanto incassi effettivamente ogni mese</li>
+                                <li><strong>Tabelle aspettativa di vita:</strong> proiezione del reddito complessivo fino a diverse età</li>
+                                <li><strong>Grafico:</strong> evoluzione del flusso cedolare nel tempo sotto diversi scenari</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── VENDITA RISERVA PROPRIETA' ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headVRP">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseVRP" aria-expanded="false" aria-controls="collapseVRP">
+                            <i class="bi bi-house-door text-success me-2"></i>
+                            <strong>Vendita Riserva Proprietà (VRP)</strong>
+                            <span class="badge bg-success-subtle text-success ms-2">Simulatori</span>
+                        </button>
+                    </h2>
+                    <div id="collapseVRP" class="accordion-collapse collapse" aria-labelledby="headVRP"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Simula la vendita di un immobile con riserva di proprietà (nuda proprietà con usufrutto)
+                               e analizza l'impatto finanziario complessivo.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-sliders me-1"></i>Parametri di Input</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Parametro</th><th>Descrizione</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>Valore vendita</code></td><td>Prezzo di vendita dell'immobile</td></tr>
+                                    <tr><td><code>Prezzo acquisto</code></td><td>Prezzo originale di acquisto (per calcolo plusvalenza)</td></tr>
+                                    <tr><td><code>Anticipo</code></td><td>Importo versato subito dall'acquirente</td></tr>
+                                    <tr><td><code>Durata</code></td><td>Durata del piano di pagamento rateale (anni)</td></tr>
+                                    <tr><td><code>Tasso</code></td><td>Tasso di interesse applicato alle rate</td></tr>
+                                    <tr><td><code>Fiscalità</code></td><td>Plusvalenza, imposta registro, IMU e altre spese</td></tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-bar-chart me-1"></i>Risultati</h6>
+                            <ul>
+                                <li><strong>Piano rate:</strong> dettaglio di ogni rata con quota capitale, interessi e residuo</li>
+                                <li><strong>Confronto costo opportunità:</strong> cosa avresti guadagnato investendo diversamente</li>
+                                <li><strong>Riepilogo fiscale:</strong> tasse e commissioni sulla vendita</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-bookmark-check me-1"></i>Salva e Attiva</h6>
+                            <p>Puoi <strong>salvare</strong> la simulazione e <strong>attivarla</strong>: in questo caso,
+                               il suo impatto verrà integrato nei record di Patrimonio, modificando il valore degli
+                               immobili e aggiungendo la liquidità in ingresso dalle rate.</p>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Prova diversi scenari di anticipo, durata e tasso per trovare la combinazione
+                                più vantaggiosa prima di attivare la simulazione.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── PIANO LIQUIDITA' ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headPianoLiq">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapsePianoLiq" aria-expanded="false" aria-controls="collapsePianoLiq">
+                            <i class="bi bi-clipboard-data text-info me-2"></i>
+                            <strong>Piano Liquidità</strong>
+                            <span class="badge bg-info-subtle text-info ms-2">Simulatori</span>
+                        </button>
+                    </h2>
+                    <div id="collapsePianoLiq" class="accordion-collapse collapse" aria-labelledby="headPianoLiq"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Pianificazione mensile della liquidità con distribuzione tra diversi strumenti.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-table me-1"></i>Struttura</h6>
+                            <p>Per ogni mese puoi pianificare la distribuzione della liquidità tra:</p>
+                            <ul>
+                                <li><strong>BSF:</strong> investimento in Buoni Soluzione Futuro</li>
+                                <li><strong>CD:</strong> Certificati di Deposito</li>
+                                <li><strong>XEON:</strong> ETF monetario</li>
+                                <li><strong>Altro:</strong> altre destinazioni</li>
+                            </ul>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Usa il Piano Liquidità per pianificare in anticipo come distribuire
+                                i risparmi mensili tra i diversi strumenti.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── SIMULAZIONE INVESTIMENTO ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headSimInv">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseSimInv" aria-expanded="false" aria-controls="collapseSimInv">
+                            <i class="bi bi-pie-chart text-warning me-2"></i>
+                            <strong>Simulazione Investimento</strong>
+                            <span class="badge bg-warning-subtle text-warning ms-2">Simulatori</span>
+                        </button>
+                    </h2>
+                    <div id="collapseSimInv" class="accordion-collapse collapse" aria-labelledby="headSimInv"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Proiezione dell'evoluzione futura del patrimonio basata su parametri configurabili come
+                               tasso di rendimento atteso, contributi periodici e orizzonte temporale.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-sliders me-1"></i>Parametri</h6>
+                            <ul>
+                                <li>Patrimonio iniziale</li>
+                                <li>Contributo periodico (mensile/annuale)</li>
+                                <li>Tasso di rendimento atteso</li>
+                                <li>Orizzonte temporale (anni)</li>
+                                <li>Inflazione attesa</li>
+                            </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-graph-up me-1"></i>Risultati</h6>
+                            <ul>
+                                <li>Grafico di proiezione con scenario ottimistico, medio e pessimistico</li>
+                                <li>Valore finale atteso in termini nominali e reali (corretto per inflazione)</li>
+                                <li>Rendimento complessivo stimato</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── IMPORT / EXPORT ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headImportExport">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseImportExport" aria-expanded="false" aria-controls="collapseImportExport">
+                            <i class="bi bi-arrow-left-right text-secondary me-2"></i>
+                            <strong>Import / Export</strong>
+                            <span class="badge bg-secondary-subtle text-secondary ms-2">Strumenti</span>
+                        </button>
+                    </h2>
+                    <div id="collapseImportExport" class="accordion-collapse collapse" aria-labelledby="headImportExport"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Importazione ed esportazione dei dati in vari formati.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-box-arrow-in-down me-1"></i>Importazione</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Funzione</th><th>Descrizione</th><th>Formato</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Excel Originale</strong></td>
+                                        <td>Importa tutti i dati dal file <code>Monitor Portafoglio.xlsx</code></td>
+                                        <td><span class="badge bg-success">.xlsx</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>CSV Singola Tabella</strong></td>
+                                        <td>Importa i dati di una specifica sezione da un file CSV</td>
+                                        <td><span class="badge bg-info">.csv</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-3"><i class="bi bi-box-arrow-up me-1"></i>Esportazione</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Funzione</th><th>Descrizione</th><th>Formato</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>CSV</strong></td>
+                                        <td>Esporta una singola tabella in formato CSV</td>
+                                        <td><span class="badge bg-info">.csv</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Excel Completo</strong></td>
+                                        <td>Esporta tutti i dati in un file Excel con fogli multipli</td>
+                                        <td><span class="badge bg-success">.xlsx</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Excel con Grafici</strong></td>
+                                        <td>Come sopra, ma include grafici (torta allocazione e evoluzione)</td>
+                                        <td><span class="badge bg-success">.xlsx</span> + grafici</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                L'export Excel con grafici è ideale per condividere un report del patrimonio
+                                o per archiviarlo come backup leggibile.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ──────────── IMPOSTAZIONI ──────────── -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headImpostazioni">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseImpostazioni" aria-expanded="false" aria-controls="collapseImpostazioni">
+                            <i class="bi bi-gear text-dark me-2"></i>
+                            <strong>Impostazioni</strong>
+                            <span class="badge bg-dark-subtle text-dark ms-2">Strumenti</span>
+                        </button>
+                    </h2>
+                    <div id="collapseImpostazioni" class="accordion-collapse collapse" aria-labelledby="headImpostazioni"
+                         data-bs-parent="#accordionModuli">
+                        <div class="accordion-body">
+
+                            <p>Configurazione generale dell'applicazione.</p>
+
+                            <h6 class="mt-3"><i class="bi bi-sliders me-1"></i>Parametri Disponibili</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Impostazione</th><th>Descrizione</th><th>Effetto</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="bi bi-houses me-1"></i><strong>Sconto % Immobili</strong></td>
+                                        <td>Percentuale di sconto per immobili esteri e italiani</td>
+                                        <td>Modifica il valore "Adjusted" in Dashboard</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-calendar-heart me-1"></i><strong>Data di Nascita</strong></td>
+                                        <td>Data di nascita dell'utente</td>
+                                        <td>Necessaria per calcolo rendita BFP 65-80</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-moon-stars me-1"></i><strong>Tema</strong></td>
+                                        <td>Tema chiaro o scuro</td>
+                                        <td>Cambia l'aspetto di tutta l'applicazione</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-sliders me-1"></i><strong>Parametri Simulazione</strong></td>
+                                        <td>Tassi, orizzonti temporali, inflazione</td>
+                                        <td>Usati come default nei vari simulatori</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                                Dopo aver modificato le impostazioni, clicca
+                                <button class="btn btn-primary btn-sm disabled" style="font-size:.75rem">
+                                    <i class="bi bi-check-lg"></i> Salva</button>
+                                per rendere effettive le modifiche. Alcune impostazioni (come lo sconto immobili)
+                                vengono applicate immediatamente alla Dashboard.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /accordion -->
+        </div><!-- /moduli -->
+
+        <!-- ============================================================ -->
+        <!--  TAB 4 — TUTORIAL                                             -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade" id="tutorial" role="tabpanel" aria-labelledby="tab-tutorial">
+
+            <div class="alert alert-primary mb-4">
+                <i class="bi bi-mortarboard me-1"></i>
+                <strong>Tutorial passo-passo:</strong> scenari pratici dalla A alla Z per le operazioni più comuni.
+            </div>
+
+            <!-- TUTORIAL 1 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-1-circle me-2"></i>Come iniziare da zero</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Dalla prima esecuzione a una panoramica completa del patrimonio.</p>
+
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Avvia l'applicazione</div>
+                                Esegui <code>python app.py</code> nel terminale e apri il browser su <strong>http://127.0.0.1:5000</strong>.
+                            </div>
+                            <span class="badge bg-secondary rounded-pill"><i class="bi bi-terminal"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Vai a Import / Export</div>
+                                Clicca su <i class="bi bi-arrow-left-right me-1"></i><strong>Import / Export</strong> nella barra laterale.
+                            </div>
+                            <span class="badge bg-secondary rounded-pill"><i class="bi bi-arrow-left-right"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Importa l'Excel originale</div>
+                                Seleziona il file <code>Monitor Portafoglio.xlsx</code> e clicca
+                                <button class="btn btn-success btn-sm disabled" style="font-size:.7rem"><i class="bi bi-upload"></i> Importa</button>.
+                                Questo popola tutte le tabelle principali.
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-file-earmark-excel"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Importa BFP da Excel RPOL</div>
+                                Vai a <i class="bi bi-postcard me-1"></i><strong>BFP</strong>, clicca
+                                <button class="btn btn-outline-primary btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-file-earmark-excel"></i> Importa da Excel</button>
+                                e seleziona il file scaricato da poste.it.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-postcard"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Importa Fogli Informativi PDF</div>
+                                Sempre nella sezione BFP, clicca
+                                <button class="btn btn-outline-warning btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-file-earmark-pdf"></i> Importa PDF</button>
+                                e seleziona i PDF con i coefficienti CDP.
+                            </div>
+                            <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-file-earmark-pdf"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Ricalcola Valori BFP</div>
+                                Clicca <button class="btn btn-success btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-arrow-repeat"></i> Ricalcola Valori</button>
+                                per aggiornare il valore corrente di tutti i BFP.
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-arrow-repeat"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Configura data di nascita</div>
+                                Vai a <i class="bi bi-gear me-1"></i><strong>Impostazioni</strong> e inserisci la tua
+                                data di nascita (necessaria per la rendita BFP).
+                            </div>
+                            <span class="badge bg-dark rounded-pill"><i class="bi bi-gear"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Esplora la Dashboard</div>
+                                Torna alla <i class="bi bi-speedometer2 me-1"></i><strong>Dashboard</strong>
+                                per vedere il riepilogo completo del patrimonio con grafici e card.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-speedometer2"></i></span>
+                        </li>
+                    </ol>
+
+                    <div class="alert alert-success mt-3 mb-0">
+                        <i class="bi bi-check-circle me-1"></i><strong>Fatto!</strong>
+                        Ora hai una panoramica completa del tuo patrimonio. Da qui in poi, aggiorna i dati
+                        periodicamente seguendo il Tutorial 2.
+                    </div>
+                </div>
+            </div>
+
+            <!-- TUTORIAL 2 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-2-circle me-2"></i>Come aggiornare il patrimonio mensile</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Procedura mensile per tenere aggiornato il tracciamento del patrimonio.</p>
+
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Aggiorna quotazioni e valori</div>
+                                Vai nelle sezioni specifiche (ETF, BTP, Immobili, Liquidità, ecc.) e aggiorna
+                                i valori che sono cambiati dall'ultimo aggiornamento.
+                            </div>
+                            <span class="badge bg-info rounded-pill"><i class="bi bi-pencil"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Vai a Patrimonio</div>
+                                Clicca su <i class="bi bi-wallet2 me-1"></i><strong>Patrimonio</strong> nella barra laterale.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-wallet2"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Crea Nuovo Record</div>
+                                Clicca <button class="btn btn-success btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-plus-lg"></i> Nuovo Record</button>
+                                e seleziona <strong>"Copia dall'ultimo record"</strong> per precompilare i campi.
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-plus-lg"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Verifica valori automatici</div>
+                                I valori di <strong>BFP, ETF e BTP</strong> si aggiornano automaticamente dai dati
+                                nelle rispettive sezioni. Verifica che siano corretti.
+                            </div>
+                            <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-check2-all"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Modifica campi manuali</div>
+                                Aggiorna manualmente i campi che non si aggiornano automaticamente
+                                (immobili, cash, fondo pensione, TFR, debiti se cambiati).
+                            </div>
+                            <span class="badge bg-secondary rounded-pill"><i class="bi bi-pencil-square"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Salva il record</div>
+                                Clicca <button class="btn btn-primary btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-check-lg"></i> Salva</button>.
+                                Il nuovo snapshot apparirà nello storico con la colonna Var. %.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-save"></i></span>
+                        </li>
+                    </ol>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                        Imposta un promemoria mensile (es. il primo del mese) per aggiornare il patrimonio.
+                        L'operazione richiede solo pochi minuti grazie alla funzione di copia.
+                    </div>
+                </div>
+            </div>
+
+            <!-- TUTORIAL 3 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-3-circle me-2"></i>Come calcolare la rendita BFP futura</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Scopri quanto riceverai mensilmente dai tuoi BFP tra i 65 e gli 80 anni.</p>
+
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Assicurati di aver importato i PDF</div>
+                                I coefficienti CDP devono essere già importati (vedi Tutorial 1, passo 5).
+                                Senza coefficienti, il calcolo non è possibile.
+                            </div>
+                            <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-file-earmark-pdf"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Vai alla sezione BFP</div>
+                                Clicca su <i class="bi bi-postcard me-1"></i><strong>BFP</strong> nella barra laterale.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-postcard"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Inserisci la data di nascita</div>
+                                Nella sezione <strong>Riepilogo Rendita</strong> (o in <i class="bi bi-gear me-1"></i>Impostazioni),
+                                inserisci la tua data di nascita.
+                            </div>
+                            <span class="badge bg-danger rounded-pill"><i class="bi bi-calendar-heart"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Premi Calcola</div>
+                                Clicca <button class="btn btn-primary btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-calculator"></i> Calcola</button>
+                                per avviare il calcolo della rendita.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-calculator"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Leggi i risultati</div>
+                                Vedrai la <strong>rata mensile netta</strong>, la <strong>rata mensile lorda</strong>
+                                e il <strong>totale rendita</strong> su 15 anni per tutti i buoni BSF e BO65.
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-currency-euro"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Dettaglio singolo buono</div>
+                                Per il dettaglio di un singolo BFP, clicca il pulsante <strong>Piano Rimborso</strong>
+                                nella riga corrispondente e vai alla sezione <strong>Rendita</strong> del modal.
+                            </div>
+                            <span class="badge bg-info rounded-pill"><i class="bi bi-search"></i></span>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- TUTORIAL 4 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-4-circle me-2"></i>Come simulare la vendita di un immobile</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Simula la vendita con riserva di proprietà e analizza l'impatto finanziario.</p>
+
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Vai a Vendita Riserva Proprietà</div>
+                                Clicca su <i class="bi bi-house-door me-1"></i><strong>Vendita Riserva Prop.</strong> nella barra laterale.
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-house-door"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Inserisci i dati della vendita</div>
+                                Compila: valore vendita, prezzo acquisto originale, spese accessorie.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-pencil"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Configura il piano pagamento</div>
+                                Imposta anticipo, durata (anni), tasso di interesse sulle rate.
+                            </div>
+                            <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-sliders"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Inserisci la fiscalità</div>
+                                Compila plusvalenza, imposta di registro, IMU e altre tasse applicabili.
+                            </div>
+                            <span class="badge bg-danger rounded-pill"><i class="bi bi-receipt"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Premi Calcola</div>
+                                Clicca <button class="btn btn-primary btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-calculator"></i> Calcola</button>
+                                per generare il piano rate e il confronto costo opportunità.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-calculator"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Analizza i risultati</div>
+                                Esamina il piano rate (quota capitale e interessi per ogni rata) e il
+                                confronto costo opportunità per capire se conviene vendere.
+                            </div>
+                            <span class="badge bg-info rounded-pill"><i class="bi bi-bar-chart"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Salva e Attiva</div>
+                                Se soddisfatto, salva la simulazione e <strong>attivala</strong> per integrare
+                                l'impatto nei record di Patrimonio.
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-bookmark-check"></i></span>
+                        </li>
+                    </ol>
+
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                        Attivare una simulazione VRP modifica i valori nel Patrimonio. Puoi disattivarla
+                        in qualsiasi momento per tornare ai valori originali.
+                    </div>
+                </div>
+            </div>
+
+            <!-- TUTORIAL 5 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-5-circle me-2"></i>Come esportare i dati</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Backup e condivisione dei dati in vari formati.</p>
+
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Vai a Import / Export</div>
+                                Clicca su <i class="bi bi-arrow-left-right me-1"></i><strong>Import / Export</strong> nella barra laterale.
+                            </div>
+                            <span class="badge bg-secondary rounded-pill"><i class="bi bi-arrow-left-right"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Scegli il formato</div>
+                                <ul class="mb-0">
+                                    <li><strong>CSV:</strong> per una singola tabella, utile per analisi in Excel/Sheets</li>
+                                    <li><strong>Excel completo:</strong> tutti i dati con fogli multipli</li>
+                                    <li><strong>Excel con grafici:</strong> include anche torta allocazione e grafico evoluzione</li>
+                                </ul>
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-filetype-xlsx"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Scarica il file</div>
+                                Clicca il pulsante di export corrispondente. Il file verrà scaricato automaticamente
+                                nella cartella download del browser.
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-download"></i></span>
+                        </li>
+                    </ol>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                        Per un backup completo, esporta in formato Excel. Per condividere singoli dati con
+                        il commercialista o consulente, usa il CSV della tabella specifica.
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /tutorial -->
+
+        <!-- ============================================================ -->
+        <!--  TAB 5 — FAQ                                                   -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade" id="faq" role="tabpanel" aria-labelledby="tab-faq">
+
+            <div class="alert alert-secondary mb-4">
+                <i class="bi bi-question-circle me-1"></i>
+                <strong>Domande frequenti.</strong> Clicca su una domanda per espandere la risposta.
+            </div>
+
+            <div class="accordion" id="accordionFAQ">
+
+                <!-- FAQ 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq1h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq1" aria-expanded="false" aria-controls="faq1">
+                            <i class="bi bi-terminal me-2 text-primary"></i>
+                            Come avvio l'applicazione?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse" aria-labelledby="faq1h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>Apri un terminale (Prompt dei comandi, PowerShell o terminale del tuo IDE)</li>
+                                <li>Naviga nella cartella del progetto: <code>cd F:\sviluppo\gestptf</code></li>
+                                <li>Esegui: <code>python app.py</code></li>
+                                <li>Apri il browser su <a href="http://127.0.0.1:5000">http://127.0.0.1:5000</a></li>
+                            </ol>
+                            <p class="mb-0">In alternativa, puoi usare Docker: <code>docker-compose up</code></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq2h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
+                            <i class="bi bi-database me-2 text-warning"></i>
+                            Dove sono salvati i dati?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" aria-labelledby="faq2h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>I dati sono salvati in un database SQLite locale nel file:</p>
+                            <code class="d-block p-2 bg-dark text-light rounded mb-2">data/gestptf.db</code>
+                            <p class="mb-0">Il file si trova nella sottocartella <code>data/</code> della directory del progetto.
+                               Nessun dato viene inviato a server esterni.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq3h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
+                            <i class="bi bi-laptop me-2 text-info"></i>
+                            Posso usare l'app su più dispositivi?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" aria-labelledby="faq3h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>L'app è progettata per l'uso locale su un singolo computer. Per usarla su più dispositivi puoi:</p>
+                            <ul class="mb-0">
+                                <li><strong>Copia del database:</strong> copia il file <code>data/gestptf.db</code> tra i dispositivi</li>
+                                <li><strong>Cartella sincronizzata:</strong> posiziona il progetto in una cartella sincronizzata (es. OneDrive, Dropbox),
+                                    ma <strong>non usare l'app contemporaneamente da due dispositivi</strong> per evitare conflitti sul database</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 4 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq4h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">
+                            <i class="bi bi-shield-check me-2 text-success"></i>
+                            Come faccio il backup dei dati?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" aria-labelledby="faq4h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>Hai due opzioni per il backup:</p>
+                            <ol>
+                                <li><strong>Copia del file database:</strong> copia il file <code>data/gestptf.db</code> in una posizione sicura</li>
+                                <li><strong>Export Excel:</strong> vai a <i class="bi bi-arrow-left-right me-1"></i>Import / Export
+                                    ed esporta in formato Excel completo. Questo file è leggibile anche senza l'app</li>
+                            </ol>
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                Fai un backup almeno mensile, possibilmente automatizzato con uno script
+                                o un servizio di sincronizzazione cloud.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 5 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq5h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq5" aria-expanded="false" aria-controls="faq5">
+                            <i class="bi bi-exclamation-circle me-2 text-danger"></i>
+                            Perché il Piano Rimborso è disabilitato per alcuni BFP?
+                        </button>
+                    </h2>
+                    <div id="faq5" class="accordion-collapse collapse" aria-labelledby="faq5h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>Il pulsante <strong>Piano Rimborso</strong> richiede che siano stati importati i
+                               <strong>coefficienti di rimborso</strong> dalla tabella del Foglio Informativo PDF
+                               corrispondente alla serie del buono.</p>
+                            <p><strong>Soluzione:</strong></p>
+                            <ol class="mb-0">
+                                <li>Scarica il Foglio Informativo PDF per la serie del BFP dal sito CDP</li>
+                                <li>Vai a <i class="bi bi-postcard me-1"></i>BFP</li>
+                                <li>Clicca <button class="btn btn-outline-warning btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-file-earmark-pdf"></i> Importa PDF</button></li>
+                                <li>Importa il PDF corrispondente</li>
+                                <li>Il pulsante Piano Rimborso si attiverà automaticamente</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 6 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq6h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq6" aria-expanded="false" aria-controls="faq6">
+                            <i class="bi bi-receipt me-2 text-secondary"></i>
+                            Come funziona il calcolo del bollo BFP?
+                        </button>
+                    </h2>
+                    <div id="faq6" class="accordion-collapse collapse" aria-labelledby="faq6h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>L'imposta di bollo sui BFP è pari allo <strong>0,20% annuo</strong> del valore di rimborso.</p>
+                            <p><strong>Esenzione importante:</strong></p>
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Se il <strong>valore complessivo</strong> di tutti i BFP intestati alla stessa persona
+                                è <strong>inferiore a 5.000 &euro;</strong>, il bollo <strong>non è dovuto</strong>.
+                            </div>
+                            <p class="mb-0">L'app calcola automaticamente il bollo dovuto considerando questa soglia di esenzione.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 7 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq7h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq7" aria-expanded="false" aria-controls="faq7">
+                            <i class="bi bi-sliders me-2 text-primary"></i>
+                            Come funziona lo slider % immobili nella Dashboard?
+                        </button>
+                    </h2>
+                    <div id="faq7" class="accordion-collapse collapse" aria-labelledby="faq7h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>Lo slider permette di applicare una percentuale di sconto al valore degli immobili
+                               per ottenere una stima più conservativa del patrimonio.</p>
+                            <ul>
+                                <li>Puoi impostare percentuali diverse per <strong>immobili esteri</strong> e <strong>immobili Italia</strong></li>
+                                <li>Muovendo lo slider, il valore <strong>"Adjusted"</strong> nella card e nei grafici si aggiorna in tempo reale</li>
+                                <li>Lo sconto di default è quello salvato nelle <i class="bi bi-gear me-1"></i>Impostazioni</li>
+                            </ul>
+                            <p class="mb-0"><strong>Esempio:</strong> con un immobile da 200.000 &euro; e uno sconto del 20%,
+                               il valore adjusted sarà 160.000 &euro;.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 8 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq8h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq8" aria-expanded="false" aria-controls="faq8">
+                            <i class="bi bi-moon-stars me-2 text-info"></i>
+                            Posso cambiare il tema chiaro/scuro?
+                        </button>
+                    </h2>
+                    <div id="faq8" class="accordion-collapse collapse" aria-labelledby="faq8h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>Si. Usa il pulsante con l'icona <i class="bi bi-sun"></i> / <i class="bi bi-moon-stars"></i>
+                               nell'angolo in alto a destra dell'header (barra superiore).</p>
+                            <p class="mb-0">Il tema scelto viene ricordato automaticamente e applicato alle visite successive.
+                               Puoi anche impostarlo nelle <i class="bi bi-gear me-1"></i>Impostazioni.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 9 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq9h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq9" aria-expanded="false" aria-controls="faq9">
+                            <i class="bi bi-postcard me-2 text-warning"></i>
+                            Come importo i dati da Poste Italiane?
+                        </button>
+                    </h2>
+                    <div id="faq9" class="accordion-collapse collapse" aria-labelledby="faq9h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>Accedi al sito <a href="https://www.poste.it" target="_blank">poste.it</a> con le tue credenziali</li>
+                                <li>Vai alla sezione <strong>"I tuoi prodotti"</strong></li>
+                                <li>Seleziona <strong>"Risparmio Postale Online" (RPOL)</strong></li>
+                                <li>Cerca l'opzione per scaricare l'elenco dei tuoi BFP in formato Excel</li>
+                                <li>Salva il file sul tuo computer</li>
+                                <li>In GestPTF, vai a <i class="bi bi-postcard me-1"></i><strong>BFP</strong></li>
+                                <li>Clicca <button class="btn btn-outline-primary btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-file-earmark-excel"></i> Importa da Excel</button></li>
+                                <li>Seleziona il file scaricato</li>
+                            </ol>
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-lightbulb me-1"></i><strong>Suggerimento:</strong>
+                                L'interfaccia di poste.it cambia periodicamente. Se non trovi l'opzione di download,
+                                cerca nelle sezioni "Dettaglio" o "Movimenti" del Risparmio Postale.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 10 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="faq10h">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq10" aria-expanded="false" aria-controls="faq10">
+                            <i class="bi bi-patch-question me-2 text-danger"></i>
+                            Il valore della rendita BFP è garantito?
+                        </button>
+                    </h2>
+                    <div id="faq10" class="accordion-collapse collapse" aria-labelledby="faq10h" data-bs-parent="#accordionFAQ">
+                        <div class="accordion-body">
+                            <p>I BFP sono garantiti dallo Stato Italiano tramite Cassa Depositi e Prestiti (CDP).
+                               I tassi di rendimento sono fissati al momento della sottoscrizione e non possono
+                               essere modificati successivamente.</p>
+                            <p>Tuttavia, i valori calcolati dall'app sono <strong>stime basate sui coefficienti ufficiali CDP</strong>
+                               importati dai Fogli Informativi. Per il valore esatto rimborsabile, fai sempre riferimento
+                               al sito ufficiale di Poste Italiane o CDP.</p>
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                                I calcoli della rendita 65-80 sono proiezioni basate sui dati attuali.
+                                Le normative fiscali potrebbero cambiare nel tempo, influenzando il valore netto effettivo.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /accordionFAQ -->
+        </div><!-- /faq -->
+
+    </div><!-- /tab-content -->
+
+</div><!-- /container-fluid -->
+{% endblock %}

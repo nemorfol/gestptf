@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}Fondo Pensione - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-piggy-bank me-2"></i>Fondo Pensione</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fpModal" onclick="resetFpForm()">
+            <i class="bi bi-plus-lg me-1"></i> Nuova Registrazione
+        </button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Valore Attuale</p>
+                    <h5 class="mb-0 fw-bold text-primary">{{ summary.valore_attuale|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale Contributi</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_contributi|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Rendimento Medio</p>
+                    <h5 class="mb-0 fw-bold text-success">{{ '{:.2f}'.format(summary.rendimento_medio) if summary and summary.rendimento_medio else '—' }}%</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plotly chart -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-graph-up me-1"></i> Andamento Valore nel Tempo
+        </div>
+        <div class="card-body">
+            <div id="fpChart" style="height:350px;"></div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Storico Registrazioni
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="fpTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th class="text-end">Valore</th>
+                            <th class="text-end">Contributo</th>
+                            <th class="text-end">Rendimento</th>
+                            <th>Note</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fp in records %}
+                        <tr data-id="{{ fp.id }}">
+                            <td>{{ fp.data }}</td>
+                            <td class="text-end">{{ fp.valore|currency }}</td>
+                            <td class="text-end">{{ fp.contributo|currency }}</td>
+                            <td class="text-end">{{ '{:.2f}'.format(fp.rendimento) if fp.rendimento else '—' }}%</td>
+                            <td>{{ fp.note or '—' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick='editFp({{ fp|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteFp({{ fp.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Fondo Pensione -->
+<div class="modal fade" id="fpModal" tabindex="-1" aria-labelledby="fpModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fpModalLabel">Nuova Registrazione</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="fpForm">
+                    <input type="hidden" id="fpId" name="id">
+                    <div class="mb-3">
+                        <label for="fpData" class="form-label">Data</label>
+                        <input type="date" class="form-control" id="fpData" name="data" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fpValore" class="form-label">Valore</label>
+                        <input type="number" step="0.01" class="form-control" id="fpValore" name="valore" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fpContributo" class="form-label">Contributo</label>
+                        <input type="number" step="0.01" class="form-control" id="fpContributo" name="contributo" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="fpRendimento" class="form-label">Rendimento (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="fpRendimento" name="rendimento" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="fpNote" class="form-label">Note</label>
+                        <textarea class="form-control" id="fpNote" name="note" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveFp()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var table = PM.DT.init('#fpTable', {
+        order: [[0, 'desc']],
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    // Plotly chart
+    var records = {{ records|tojson }};
+    if (records.length > 0) {
+        var dates = records.map(function(r) { return r.data; });
+        var values = records.map(function(r) { return r.valore; });
+        Plotly.newPlot('fpChart', [{
+            x: dates,
+            y: values,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Valore',
+            line: { color: '#4f8cff', width: 2 },
+            marker: { size: 6 }
+        }], {
+            margin: { t: 20, r: 30, b: 40, l: 70 },
+            xaxis: { title: 'Data' },
+            yaxis: { title: 'Valore (\u20ac)', tickformat: ',.0f' },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#dee2e6' : '#212529' }
+        }, { responsive: true });
+    } else {
+        document.getElementById('fpChart').innerHTML = '<p class="text-center text-muted py-5">Nessun dato disponibile per il grafico</p>';
+    }
+
+    window.resetFpForm = function() {
+        document.getElementById('fpForm').reset();
+        document.getElementById('fpId').value = '';
+        document.getElementById('fpModalLabel').textContent = 'Nuova Registrazione';
+    };
+
+    window.editFp = function(fp) {
+        document.getElementById('fpId').value = fp.id;
+        document.getElementById('fpData').value = fp.data || '';
+        document.getElementById('fpValore').value = fp.valore || 0;
+        document.getElementById('fpContributo').value = fp.contributo || 0;
+        document.getElementById('fpRendimento').value = fp.rendimento || 0;
+        document.getElementById('fpNote').value = fp.note || '';
+        document.getElementById('fpModalLabel').textContent = 'Modifica Registrazione';
+        new bootstrap.Modal(document.getElementById('fpModal')).show();
+    };
+
+    window.saveFp = function() {
+        var form = document.getElementById('fpForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('fpId').value;
+        var data = {
+            nome: 'Fondo Pensione',
+            data: document.getElementById('fpData').value,
+            valore: parseFloat(document.getElementById('fpValore').value) || 0,
+            contributo: parseFloat(document.getElementById('fpContributo').value) || 0,
+            rendimento: parseFloat(document.getElementById('fpRendimento').value) || 0,
+            note: document.getElementById('fpNote').value
+        };
+
+        var url = '/fondo-pensione/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('fpModal')).hide();
+            PM.Toast.show('Registrazione salvata con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteFp = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questa registrazione?', function() {
+            PM.apiCall('/fondo-pensione/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Registrazione eliminata', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+})();
+</script>
+{% endblock %}

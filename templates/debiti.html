@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}Debiti - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-credit-card me-2"></i>Debiti</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#debitoModal" onclick="resetDebitoForm()">
+            <i class="bi bi-plus-lg me-1"></i> Nuovo Debito
+        </button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale Debito Residuo</p>
+                    <h5 class="mb-0 fw-bold text-danger">{{ summary.totale_residuo|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale Rate Mensili</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_rate_mensili|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">N. Debiti</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.count if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not records %}
+    <!-- No debts message -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body text-center py-5">
+            <div class="fs-1 mb-3">&#127881;</div>
+            <h5 class="fw-bold text-success">Nessun debito!</h5>
+            <p class="text-muted">Non hai debiti registrati. Ottimo lavoro!</p>
+        </div>
+    </div>
+    {% else %}
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Lista Debiti
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="debitiTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descrizione</th>
+                            <th class="text-end">Importo Iniziale</th>
+                            <th class="text-end">Importo Residuo</th>
+                            <th class="text-end">Tasso</th>
+                            <th class="text-end">Rata Mensile</th>
+                            <th>Data Inizio</th>
+                            <th>Data Fine</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deb in records %}
+                        <tr data-id="{{ deb.id }}">
+                            <td>
+                                {% if deb.tipo == 'mutuo' %}
+                                    <span class="badge bg-danger">Mutuo</span>
+                                {% elif deb.tipo == 'prestito' %}
+                                    <span class="badge bg-warning text-dark">Prestito</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Altro</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ deb.descrizione or '—' }}
+                                {% if deb.tipo == 'mutuo' and deb.importo_iniziale and deb.importo_iniziale > 0 %}
+                                    {% set pct = ((deb.importo_residuo or 0) / deb.importo_iniziale * 100) %}
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar bg-danger" role="progressbar"
+                                             style="width: {{ pct }}%"
+                                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-muted">{{ '{:.1f}'.format(pct) }}% residuo</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ deb.importo_iniziale|currency }}</td>
+                            <td class="text-end text-danger fw-bold">{{ deb.importo_residuo|currency }}</td>
+                            <td class="text-end">{{ '{:.2f}'.format(deb.tasso_interesse) if deb.tasso_interesse else '—' }}%</td>
+                            <td class="text-end">{{ deb.rata_mensile|currency }}</td>
+                            <td>{{ deb.data_inizio or '—' }}</td>
+                            <td>{{ deb.data_fine or '—' }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick='editDebito({{ deb|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteDebito({{ deb.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Debito -->
+<div class="modal fade" id="debitoModal" tabindex="-1" aria-labelledby="debitoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="debitoModalLabel">Nuovo Debito</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="debitoForm">
+                    <input type="hidden" id="debId" name="id">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="debTipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="debTipo" name="tipo" required>
+                                <option value="mutuo">Mutuo</option>
+                                <option value="prestito">Prestito</option>
+                                <option value="altro">Altro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="debDescrizione" class="form-label">Descrizione</label>
+                            <input type="text" class="form-control" id="debDescrizione" name="descrizione">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="debImportoIniziale" class="form-label">Importo Iniziale</label>
+                            <input type="number" step="0.01" class="form-control" id="debImportoIniziale" name="importo_iniziale" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="debImportoResiduo" class="form-label">Importo Residuo</label>
+                            <input type="number" step="0.01" class="form-control" id="debImportoResiduo" name="importo_residuo" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="debTassoInteresse" class="form-label">Tasso Interesse (%)</label>
+                            <input type="number" step="0.01" class="form-control" id="debTassoInteresse" name="tasso_interesse" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="debRataMensile" class="form-label">Rata Mensile</label>
+                            <input type="number" step="0.01" class="form-control" id="debRataMensile" name="rata_mensile" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="debDataInizio" class="form-label">Data Inizio</label>
+                            <input type="date" class="form-control" id="debDataInizio" name="data_inizio">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="debDataFine" class="form-label">Data Fine</label>
+                            <input type="date" class="form-control" id="debDataFine" name="data_fine">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="debNote" class="form-label">Note</label>
+                        <textarea class="form-control" id="debNote" name="note" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveDebito()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    {% if records %}
+    var table = PM.DT.init('#debitiTable', {
+        order: [[6, 'desc']],
+        scrollX: true,
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+    {% endif %}
+
+    window.resetDebitoForm = function() {
+        document.getElementById('debitoForm').reset();
+        document.getElementById('debId').value = '';
+        document.getElementById('debitoModalLabel').textContent = 'Nuovo Debito';
+    };
+
+    window.editDebito = function(deb) {
+        document.getElementById('debId').value = deb.id;
+        document.getElementById('debTipo').value = deb.tipo || 'mutuo';
+        document.getElementById('debDescrizione').value = deb.descrizione || '';
+        document.getElementById('debImportoIniziale').value = deb.importo_iniziale || 0;
+        document.getElementById('debImportoResiduo').value = deb.importo_residuo || 0;
+        document.getElementById('debTassoInteresse').value = deb.tasso_interesse || 0;
+        document.getElementById('debRataMensile').value = deb.rata_mensile || 0;
+        document.getElementById('debDataInizio').value = deb.data_inizio || '';
+        document.getElementById('debDataFine').value = deb.data_fine || '';
+        document.getElementById('debNote').value = deb.note || '';
+        document.getElementById('debitoModalLabel').textContent = 'Modifica Debito';
+        new bootstrap.Modal(document.getElementById('debitoModal')).show();
+    };
+
+    window.saveDebito = function() {
+        var form = document.getElementById('debitoForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('debId').value;
+        var data = {
+            tipo: document.getElementById('debTipo').value,
+            descrizione: document.getElementById('debDescrizione').value,
+            importo_iniziale: parseFloat(document.getElementById('debImportoIniziale').value) || 0,
+            importo_residuo: parseFloat(document.getElementById('debImportoResiduo').value) || 0,
+            tasso_interesse: parseFloat(document.getElementById('debTassoInteresse').value) || 0,
+            rata_mensile: parseFloat(document.getElementById('debRataMensile').value) || 0,
+            data_inizio: document.getElementById('debDataInizio').value,
+            data_fine: document.getElementById('debDataFine').value,
+            note: document.getElementById('debNote').value
+        };
+
+        var url = '/debiti/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('debitoModal')).hide();
+            PM.Toast.show('Debito salvato con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteDebito = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questo debito?', function() {
+            PM.apiCall('/debiti/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Debito eliminato', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+})();
+</script>
+{% endblock %}

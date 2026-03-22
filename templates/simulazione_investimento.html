@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+
+{% block title %}Simulazione Investimento - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Simulazione Investimento</h4>
+        {% if latest_patrimonio and latest_patrimonio.data is defined %}
+        <small class="text-muted">Patrimonio al: {{ latest_patrimonio.data }}</small>
+        {% endif %}
+    </div>
+
+    <!-- Parameter input -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-sliders me-1"></i> Parametri Simulazione
+        </div>
+        <div class="card-body">
+            <form id="simForm">
+                <div class="row g-3">
+                    <div class="col-md-4 col-lg-2">
+                        <label for="simScontoEsteri" class="form-label">Sconto Imm. Esteri (%)</label>
+                        <input type="number" step="1" min="0" max="80" class="form-control" id="simScontoEsteri" value="20">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="simScontoItalia" class="form-label">Sconto Imm. Italia (%)</label>
+                        <input type="number" step="1" min="0" max="80" class="form-control" id="simScontoItalia" value="20">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="simInvestimentoBsf" class="form-label">Investimento BSF (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="simInvestimentoBsf" value="120000">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="simSpesaAnnuale" class="form-label">Spesa Annuale (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="simSpesaAnnuale" value="20000">
+                    </div>
+                    <div class="col-md-4 col-lg-1">
+                        <label for="simInflazione" class="form-label">Inflazione (%)</label>
+                        <input type="number" step="0.1" class="form-control" id="simInflazione" value="3.0">
+                    </div>
+                    <div class="col-md-4 col-lg-1">
+                        <label for="simRendimento" class="form-label">Rendimento (%)</label>
+                        <input type="number" step="0.1" class="form-control" id="simRendimento" value="3.0">
+                    </div>
+                    <div class="col-md-4 col-lg-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-primary w-100" onclick="calcolaSim()">
+                            <i class="bi bi-play-fill me-1"></i> Calcola
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="simResults" style="display:none;">
+        <!-- Summary cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Patrimonio Nominale</p>
+                        <h5 class="mb-0 fw-bold" id="simTotNominale">--</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Patrimonio Adjusted</p>
+                        <h5 class="mb-0 fw-bold text-warning" id="simTotAdjusted">--</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Somma Liquida Rimanente</p>
+                        <h5 class="mb-0 fw-bold text-primary" id="simSommaLiquida">--</h5>
+                        <small class="text-muted" id="simSommaRimanente"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card shadow-sm border-0 h-100 border-start border-success border-3">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Sostenibilit&agrave;</p>
+                        <h3 class="mb-0 fw-bold text-success" id="simAnniSost">--</h3>
+                        <small class="text-muted">anni</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-transparent border-0 fw-semibold">
+                        <i class="bi bi-pie-chart me-1"></i> Allocazione Adjusted
+                    </div>
+                    <div class="card-body">
+                        <div id="chartSimPie" style="width:100%;height:400px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-transparent border-0 fw-semibold">
+                        <i class="bi bi-graph-down me-1"></i> Proiezione Capitale Liquido
+                    </div>
+                    <div class="card-body">
+                        <div id="chartSimProiezione" style="width:100%;height:400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-transparent border-0">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active fw-semibold" id="tabAlloc" data-bs-toggle="tab"
+                           href="#paneAlloc" role="tab">
+                            <i class="bi bi-grid me-1"></i> Allocazione
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" id="tabProiezione" data-bs-toggle="tab"
+                           href="#paneProiezione" role="tab">
+                            <i class="bi bi-table me-1"></i> Proiezione Annuale
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body tab-content">
+                <!-- Allocazione tab -->
+                <div class="tab-pane fade show active" id="paneAlloc" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="simAllocTable" class="table table-striped table-hover align-middle" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Classe di Asset</th>
+                                    <th class="text-end">Nominale</th>
+                                    <th class="text-end">% Nom.</th>
+                                    <th class="text-end">Adjusted</th>
+                                    <th class="text-end">% Adj.</th>
+                                    <th class="text-end">Differenza</th>
+                                </tr>
+                            </thead>
+                            <tbody id="simAllocBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Proiezione tab -->
+                <div class="tab-pane fade" id="paneProiezione" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="simProiezTable" class="table table-striped table-hover align-middle" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Anno</th>
+                                    <th class="text-end">Capitale Inizio</th>
+                                    <th class="text-end">Rendimento</th>
+                                    <th class="text-end">Spesa</th>
+                                    <th class="text-end">Capitale Fine</th>
+                                </tr>
+                            </thead>
+                            <tbody id="simProiezBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function getPlotlyTheme() {
+        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: isDark ? '#dee2e6' : '#495057' },
+            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'],
+            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
+        };
+    }
+
+    function getPlotlyLayout() {
+        var theme = getPlotlyTheme();
+        return Object.assign({}, theme, {
+            margin: { t: 20, r: 20, b: 40, l: 70 },
+            autosize: true
+        });
+    }
+
+    var plotlyConfig = { responsive: true, displayModeBar: false };
+    var dtAlloc = null;
+    var dtProiez = null;
+
+    // Patrimonio from server
+    var patrimonio = {{ latest_patrimonio|tojson if latest_patrimonio and latest_patrimonio is mapping and 'error' not in latest_patrimonio else '{}' }};
+
+    window.calcolaSim = function() {
+        var data = {
+            patrimonio: patrimonio,
+            sconto_esteri: parseFloat(document.getElementById('simScontoEsteri').value) || 0,
+            sconto_italia: parseFloat(document.getElementById('simScontoItalia').value) || 0,
+            investimento_bsf: parseFloat(document.getElementById('simInvestimentoBsf').value) || 0,
+            spesa_annuale: parseFloat(document.getElementById('simSpesaAnnuale').value) || 0,
+            inflazione: parseFloat(document.getElementById('simInflazione').value) || 0,
+            rendimento: parseFloat(document.getElementById('simRendimento').value) || 0
+        };
+
+        PM.Loading.show();
+        PM.apiCall('{{ url_for("simulazione_inv_bp.calcola") }}', 'POST', data).then(function(response) {
+            PM.Loading.hide();
+            renderResults(response.data);
+        }).catch(function(err) {
+            PM.Loading.hide();
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    function colorValue(val) {
+        if (val > 0) return 'text-success';
+        if (val < 0) return 'text-danger';
+        return '';
+    }
+
+    function renderResults(d) {
+        document.getElementById('simResults').style.display = 'block';
+
+        // Summary cards
+        document.getElementById('simTotNominale').textContent = PM.Fmt.currency(d.tot_nominale);
+        document.getElementById('simTotAdjusted').textContent = PM.Fmt.currency(d.tot_adjusted);
+        document.getElementById('simSommaLiquida').textContent = PM.Fmt.currency(d.somma_liquida);
+        document.getElementById('simSommaRimanente').textContent = 'Tot. rimanente (incl. imm.): ' + PM.Fmt.currency(d.somma_rimanente);
+        document.getElementById('simAnniSost').textContent = d.anni_sostenibilita >= 100 ? '100+' : d.anni_sostenibilita;
+
+        // --- Pie chart: allocazione adjusted ---
+        var alloc = d.allocazione.filter(function(a) { return a.key !== '_totale' && a.adjusted > 0; });
+        var pieData = [{
+            type: 'pie',
+            labels: alloc.map(function(a) { return a.asset; }),
+            values: alloc.map(function(a) { return a.adjusted; }),
+            hole: 0.45,
+            textinfo: 'label+percent',
+            textposition: 'outside',
+            marker: { colors: getPlotlyTheme().colorway },
+            hovertemplate: '%{label}<br>%{value:,.0f} \u20ac<br>%{percent}<extra></extra>'
+        }];
+        var pieLayout = getPlotlyLayout();
+        pieLayout.showlegend = false;
+        Plotly.react('chartSimPie', pieData, pieLayout, plotlyConfig);
+
+        // --- Line chart: proiezione capitale ---
+        var proiez = d.proiezione;
+        var anni = proiez.map(function(p) { return 'Anno ' + p.anno; });
+        var capitali = proiez.map(function(p) { return p.capitale_fine; });
+        var spese = proiez.map(function(p) { return p.spesa_anno; });
+
+        var traces = [
+            {
+                x: anni, y: capitali, name: 'Capitale',
+                type: 'scatter', mode: 'lines+markers',
+                line: { color: '#4e79a7', width: 2.5 },
+                marker: { size: 5 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(78,121,167,0.08)'
+            },
+            {
+                x: anni, y: spese, name: 'Spesa Annuale',
+                type: 'scatter', mode: 'lines+markers',
+                line: { color: '#e15759', width: 2, dash: 'dot' },
+                marker: { size: 4 },
+                yaxis: 'y2'
+            }
+        ];
+
+        var lineLayout = getPlotlyLayout();
+        lineLayout.xaxis = Object.assign(lineLayout.xaxis || {}, { title: '' });
+        lineLayout.yaxis = Object.assign(lineLayout.yaxis || {}, { title: 'Capitale (\u20ac)', tickformat: ',.0f' });
+        lineLayout.yaxis2 = {
+            title: 'Spesa (\u20ac)', overlaying: 'y', side: 'right',
+            tickformat: ',.0f', gridcolor: 'rgba(0,0,0,0)'
+        };
+        lineLayout.legend = { orientation: 'h', y: -0.15 };
+        Plotly.react('chartSimProiezione', traces, lineLayout, plotlyConfig);
+
+        // --- Table: Allocazione ---
+        var tbody = document.getElementById('simAllocBody');
+        tbody.innerHTML = '';
+        d.allocazione.forEach(function(a) {
+            var diff = a.adjusted - a.nominale;
+            var isTotale = a.key === '_totale';
+            var cls = isTotale ? ' class="table-active fw-bold"' : '';
+            tbody.innerHTML += '<tr' + cls + '>' +
+                '<td>' + a.asset + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(a.nominale) + '</td>' +
+                '<td class="text-end">' + a.pct_nominale.toFixed(2) + '%</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(a.adjusted) + '</td>' +
+                '<td class="text-end">' + a.pct_adjusted.toFixed(2) + '%</td>' +
+                '<td class="text-end ' + colorValue(diff) + '">' + PM.Fmt.currency(diff) + '</td>' +
+                '</tr>';
+        });
+
+        if (dtAlloc) { dtAlloc.destroy(); }
+        dtAlloc = PM.DT.init('#simAllocTable', { paging: false, searching: false, info: false, ordering: false });
+
+        // --- Table: Proiezione ---
+        var pbody = document.getElementById('simProiezBody');
+        pbody.innerHTML = '';
+        proiez.forEach(function(p) {
+            var capClass = p.capitale_fine <= 0 ? 'text-danger fw-bold' : '';
+            pbody.innerHTML += '<tr>' +
+                '<td>' + (p.anno === 0 ? 'Inizio' : p.anno) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(p.capitale_inizio) + '</td>' +
+                '<td class="text-end text-success">' + PM.Fmt.currency(p.rendimento_anno) + '</td>' +
+                '<td class="text-end text-danger">' + PM.Fmt.currency(p.spesa_anno) + '</td>' +
+                '<td class="text-end ' + capClass + '">' + PM.Fmt.currency(p.capitale_fine) + '</td>' +
+                '</tr>';
+        });
+
+        if (dtProiez) { dtProiez.destroy(); }
+        dtProiez = PM.DT.init('#simProiezTable', { paging: false, searching: false, info: true, ordering: false });
+
+        // Scroll to results
+        document.getElementById('simResults').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Theme toggle
+    var themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', function() {
+            setTimeout(function() {
+                if (document.getElementById('simResults').style.display !== 'none') {
+                    Plotly.relayout('chartSimPie', getPlotlyLayout());
+                    Plotly.relayout('chartSimProiezione', getPlotlyLayout());
+                }
+            }, 100);
+        });
+    }
+
+    // Auto-calculate on page load
+    calcolaSim();
+})();
+</script>
+{% endblock %}

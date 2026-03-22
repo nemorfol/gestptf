@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+
+{% block title %}Import / Export - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Import / Export</h4>
+    </div>
+
+    <div class="row g-4">
+        <!-- Section 1: Importa Excel Originale -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4 h-100">
+                <div class="card-header bg-transparent border-0 fw-semibold">
+                    <i class="bi bi-file-earmark-excel text-success me-1"></i> Importa Excel Originale
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <p class="text-muted small">
+                        Importa il file Excel originale con tutti i dati del portafoglio.
+                        Questa operazione sovrascriver&agrave; i dati esistenti.
+                    </p>
+                    <div class="mt-auto">
+                        <button class="btn btn-success w-100" onclick="importaExcelOriginale()">
+                            <i class="bi bi-upload me-1"></i> Importa Excel Originale
+                        </button>
+                    </div>
+                    <div id="importOrigResult" class="mt-3" style="display:none;">
+                        <div class="alert mb-0" id="importOrigAlert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Importa File -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4 h-100">
+                <div class="card-header bg-transparent border-0 fw-semibold">
+                    <i class="bi bi-cloud-upload text-primary me-1"></i> Importa File
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        <label for="importModulo" class="form-label">Modulo destinazione</label>
+                        <select class="form-select" id="importModulo">
+                            <option value="patrimonio">Patrimonio</option>
+                            <option value="etf">ETF</option>
+                            <option value="bond">Obbligazioni</option>
+                            <option value="investimento_liquidita">Piano Liquidit&agrave;</option>
+                        </select>
+                    </div>
+
+                    <!-- Drag & Drop area -->
+                    <div class="border border-2 border-dashed rounded-3 p-4 text-center flex-grow-1 d-flex flex-column justify-content-center"
+                         id="dropZone"
+                         style="min-height: 150px; cursor: pointer; transition: all 0.2s;">
+                        <i class="bi bi-cloud-arrow-up fs-1 text-muted mb-2"></i>
+                        <p class="text-muted mb-1">Trascina qui il file Excel o CSV</p>
+                        <p class="text-muted small mb-2">oppure</p>
+                        <button class="btn btn-outline-primary btn-sm mx-auto" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-folder2-open me-1"></i> Seleziona File
+                        </button>
+                        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)">
+                    </div>
+                    <div id="selectedFileName" class="text-muted small mt-2" style="display:none;"></div>
+
+                    <button class="btn btn-primary w-100 mt-3" onclick="importaFile()" id="btnImportaFile" disabled>
+                        <i class="bi bi-upload me-1"></i> Importa
+                    </button>
+
+                    <div id="importFileResult" class="mt-3" style="display:none;">
+                        <div class="alert mb-0" id="importFileAlert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Esporta Dati -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4 h-100">
+                <div class="card-header bg-transparent border-0 fw-semibold">
+                    <i class="bi bi-download text-info me-1"></i> Esporta Dati
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <!-- CSV export -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">Esporta CSV</label>
+                        <div class="input-group">
+                            <select class="form-select" id="exportCsvTable">
+                                <option value="patrimonio">Patrimonio</option>
+                                <option value="etf">ETF</option>
+                                <option value="bond">Obbligazioni</option>
+                                <option value="investimento_liquidita">Piano Liquidit&agrave;</option>
+                            </select>
+                            <button class="btn btn-outline-info" onclick="esportaCsv()">
+                                <i class="bi bi-filetype-csv me-1"></i> Esporta
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Excel export -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">Esporta Excel</label>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success" onclick="esportaExcel()">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Excel Completo (tutti i dati)
+                            </button>
+                            <button class="btn btn-outline-success" onclick="esportaExcelGrafici()">
+                                <i class="bi bi-file-earmark-bar-graph me-1"></i> Excel con Grafici
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="exportResult" class="mt-auto" style="display:none;">
+                        <div class="alert mb-0" id="exportAlert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Import Fineco -->
+    <div class="row g-4 mt-1">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent border-0 fw-semibold">
+                    <i class="bi bi-bank text-primary me-1"></i> Importa Portafoglio Fineco
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Importa l'export del portafoglio Fineco (.xls). Aggiorna automaticamente ETF, Obbligazioni e i valori per il Patrimonio.
+                    </p>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label for="finecoFile" class="form-label">File Fineco (.xls)</label>
+                            <input type="file" class="form-control" id="finecoFile" accept=".xls,.xlsx">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="finecoData" class="form-label">Data riferimento</label>
+                            <input type="date" class="form-control" id="finecoData">
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check mt-4 pt-2">
+                                <input class="form-check-input" type="checkbox" id="finecoUpdatePos" checked>
+                                <label class="form-check-label small" for="finecoUpdatePos">Aggiorna posizioni ETF/Bond</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end gap-2">
+                            <button class="btn btn-outline-primary w-100" onclick="previewFineco()">
+                                <i class="bi bi-eye me-1"></i> Preview
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preview results -->
+                    <div id="finecoPreview" style="display:none;">
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm table-striped align-middle" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Titolo</th>
+                                        <th>ISIN</th>
+                                        <th class="text-end">Quantit&agrave;</th>
+                                        <th class="text-end">Val. Mercato</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finecoPreviewBody"></tbody>
+                                <tfoot id="finecoPreviewFoot"></tfoot>
+                            </table>
+                        </div>
+                        <button class="btn btn-primary" onclick="importaFineco()">
+                            <i class="bi bi-upload me-1"></i> Conferma Importazione
+                        </button>
+                    </div>
+
+                    <div id="finecoResult" class="mt-3" style="display:none;">
+                        <div class="alert mb-0" id="finecoAlert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress indicator -->
+    <div id="progressArea" class="mt-3" style="display:none;">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                    <span id="progressMessage">Operazione in corso...</span>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar"
+                         role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var selectedFile = null;
+
+    // Drag & Drop
+    var dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+        if (e.dataTransfer.files.length > 0) {
+            setFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    window.handleFileSelect = function(input) {
+        if (input.files.length > 0) {
+            setFile(input.files[0]);
+        }
+    };
+
+    function setFile(file) {
+        selectedFile = file;
+        var nameEl = document.getElementById('selectedFileName');
+        nameEl.textContent = 'File selezionato: ' + file.name;
+        nameEl.style.display = 'block';
+        document.getElementById('btnImportaFile').disabled = false;
+    }
+
+    function showProgress(msg) {
+        document.getElementById('progressMessage').textContent = msg;
+        document.getElementById('progressArea').style.display = 'block';
+    }
+
+    function hideProgress() {
+        document.getElementById('progressArea').style.display = 'none';
+    }
+
+    function showResult(containerId, alertId, message, type) {
+        var container = document.getElementById(containerId);
+        var alert = document.getElementById(alertId);
+        container.style.display = 'block';
+        alert.className = 'alert mb-0 alert-' + (type === 'error' ? 'danger' : type);
+        alert.innerHTML = message;
+    }
+
+    // Import Excel Originale
+    window.importaExcelOriginale = function() {
+        PM.confirmAction('Questa operazione sovrascriver\u00e0 i dati esistenti. Continuare?', function() {
+            showProgress('Importazione Excel originale in corso...');
+            PM.apiCall('{{ url_for("import_export_bp.importa_excel_base") }}', 'POST').then(function(result) {
+                hideProgress();
+                var msg = '<strong>Importazione completata!</strong><br>';
+                if (result.data && result.data.counts) {
+                    Object.keys(result.data.counts).forEach(function(k) {
+                        msg += k + ': ' + result.data.counts[k] + ' record<br>';
+                    });
+                }
+                showResult('importOrigResult', 'importOrigAlert', msg, 'success');
+                PM.Toast.show('Importazione completata', 'success');
+            }).catch(function(err) {
+                hideProgress();
+                showResult('importOrigResult', 'importOrigAlert', 'Errore: ' + err.message, 'error');
+                PM.Toast.show('Errore importazione', 'error');
+            });
+        });
+    };
+
+    // Import File
+    window.importaFile = function() {
+        if (!selectedFile) return;
+
+        var modulo = document.getElementById('importModulo').value;
+        var isExcel = selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls');
+        var isCsv = selectedFile.name.endsWith('.csv');
+
+        var formData = new FormData();
+        formData.append('file', selectedFile);
+
+        var url;
+        if (isCsv) {
+            formData.append('table_name', modulo);
+            url = '{{ url_for("import_export_bp.importa_csv") }}';
+        } else {
+            url = '{{ url_for("import_export_bp.importa_excel") }}';
+        }
+
+        showProgress('Importazione file in corso...');
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(response) {
+            if (!response.ok) throw new Error('Errore HTTP ' + response.status);
+            return response.json();
+        })
+        .then(function(result) {
+            hideProgress();
+            var msg = '<strong>Importazione completata!</strong>';
+            showResult('importFileResult', 'importFileAlert', msg, 'success');
+            PM.Toast.show('File importato con successo', 'success');
+            selectedFile = null;
+            document.getElementById('selectedFileName').style.display = 'none';
+            document.getElementById('btnImportaFile').disabled = true;
+            document.getElementById('fileInput').value = '';
+        })
+        .catch(function(err) {
+            hideProgress();
+            showResult('importFileResult', 'importFileAlert', 'Errore: ' + err.message, 'error');
+            PM.Toast.show('Errore importazione', 'error');
+        });
+    };
+
+    // Export CSV
+    window.esportaCsv = function() {
+        var table = document.getElementById('exportCsvTable').value;
+        showProgress('Esportazione CSV in corso...');
+        window.location.href = '{{ url_for("import_export_bp.esporta_csv", table_name="__TABLE__") }}'.replace('__TABLE__', table);
+        setTimeout(function() {
+            hideProgress();
+            PM.Toast.show('Download CSV avviato', 'success');
+        }, 1000);
+    };
+
+    // Export Excel
+    window.esportaExcel = function() {
+        showProgress('Esportazione Excel in corso...');
+        window.location.href = '{{ url_for("import_export_bp.esporta_excel") }}';
+        setTimeout(function() {
+            hideProgress();
+            PM.Toast.show('Download Excel avviato', 'success');
+        }, 2000);
+    };
+
+    // Fineco: set default date to today
+    document.getElementById('finecoData').value = new Date().toISOString().split('T')[0];
+
+    // Fineco Preview
+    window.previewFineco = function() {
+        var fileInput = document.getElementById('finecoFile');
+        if (!fileInput.files.length) { PM.Toast.show('Seleziona un file Fineco', 'error'); return; }
+
+        var formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        showProgress('Analisi file Fineco...');
+        fetch('{{ url_for("import_export_bp.importa_fineco_preview") }}', { method: 'POST', body: formData })
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                hideProgress();
+                if (!resp.success) { PM.Toast.show('Errore: ' + resp.error, 'error'); return; }
+                var d = resp.data;
+                var tbody = document.getElementById('finecoPreviewBody');
+                tbody.innerHTML = '';
+
+                d.etf.forEach(function(p) {
+                    var tipo = p.is_xeon ? '<span class="badge bg-info">XEON</span>' : '<span class="badge bg-success">ETF</span>';
+                    tbody.innerHTML += '<tr><td>' + tipo + '</td><td>' + p.titolo + '</td><td><code>' + p.isin + '</code></td>' +
+                        '<td class="text-end">' + p.quantita + '</td><td class="text-end">' + PM.Fmt.currency(p.valore_mercato) + '</td></tr>';
+                });
+                d.bond.forEach(function(p) {
+                    tbody.innerHTML += '<tr><td><span class="badge bg-warning text-dark">BTP</span></td><td>' + p.titolo + '</td><td><code>' + p.isin + '</code></td>' +
+                        '<td class="text-end">' + p.quantita + '</td><td class="text-end">' + PM.Fmt.currency(p.valore_mercato) + '</td></tr>';
+                });
+
+                var foot = document.getElementById('finecoPreviewFoot');
+                foot.innerHTML = '<tr class="table-active fw-bold">' +
+                    '<td colspan="4">Totali: ETF ' + PM.Fmt.currency(d.totale_etf) +
+                    ' | BTP ' + PM.Fmt.currency(d.totale_btp) +
+                    ' | XEON/CD ' + PM.Fmt.currency(d.totale_cash_xeon) + '</td>' +
+                    '<td class="text-end">' + PM.Fmt.currency(d.totale_portafoglio) + '</td></tr>';
+
+                if (d.errors.length) {
+                    foot.innerHTML += '<tr><td colspan="5" class="text-danger small">' + d.errors.join('<br>') + '</td></tr>';
+                }
+
+                document.getElementById('finecoPreview').style.display = '';
+            })
+            .catch(function(err) { hideProgress(); PM.Toast.show('Errore: ' + err.message, 'error'); });
+    };
+
+    // Fineco Import
+    window.importaFineco = function() {
+        var fileInput = document.getElementById('finecoFile');
+        if (!fileInput.files.length) return;
+
+        var formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('data', document.getElementById('finecoData').value);
+        formData.append('update_positions', document.getElementById('finecoUpdatePos').checked ? '1' : '0');
+
+        showProgress('Importazione Fineco in corso...');
+        fetch('{{ url_for("import_export_bp.importa_fineco") }}', { method: 'POST', body: formData })
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                hideProgress();
+                if (!resp.success) { PM.Toast.show('Errore: ' + resp.error, 'error'); return; }
+                var r = resp.data.import_result;
+                var pv = r.patrimonio_values;
+                var msg = '<strong>Importazione Fineco completata!</strong><br>' +
+                    'ETF: ' + r.etf_created + ' creati, ' + r.etf_updated + ' aggiornati<br>' +
+                    'Bond: ' + r.bond_created + ' creati, ' + r.bond_updated + ' aggiornati<br>' +
+                    '<hr><strong>Valori per Patrimonio:</strong><br>' +
+                    'ETF: ' + PM.Fmt.currency(pv.etf) + ' | BTP: ' + PM.Fmt.currency(pv.btp) + ' | CD/XEON: ' + PM.Fmt.currency(pv.cd);
+                document.getElementById('finecoResult').style.display = '';
+                document.getElementById('finecoAlert').className = 'alert mb-0 alert-success';
+                document.getElementById('finecoAlert').innerHTML = msg;
+                PM.Toast.show('Importazione Fineco completata', 'success');
+            })
+            .catch(function(err) { hideProgress(); PM.Toast.show('Errore: ' + err.message, 'error'); });
+    };
+
+    // Export Excel con Grafici
+    window.esportaExcelGrafici = function() {
+        showProgress('Generazione Excel con grafici in corso...');
+        window.location.href = '{{ url_for("import_export_bp.esporta_excel_grafici") }}';
+        setTimeout(function() {
+            hideProgress();
+            PM.Toast.show('Download Excel con grafici avviato', 'success');
+        }, 3000);
+    };
+})();
+</script>
+{% endblock %}

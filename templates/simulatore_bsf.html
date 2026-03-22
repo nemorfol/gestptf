@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Simulatore BSF - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-calculator me-2"></i>Simulatore BSF</h4>
+    </div>
+
+    <!-- Parameter input -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-sliders me-1"></i> Parametri Simulazione
+        </div>
+        <div class="card-body">
+            <form id="bsfForm">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="bsfImporto" class="form-label">Importo Iniziale (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="bsfImporto" name="importo"
+                               value="{{ parametri.importo_simulazione.valore if parametri and parametri.importo_simulazione is defined else 1000 }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="bsfTassoBsf" class="form-label">Tasso BSF (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="bsfTassoBsf" name="tasso_bsf"
+                               value="{{ parametri.tasso_bsf.valore if parametri and parametri.tasso_bsf is defined else 3.0 }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="bsfTassoBfp" class="form-label">Tasso BFP Ordinario (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="bsfTassoBfp" name="tasso_bfp_ord"
+                               value="{{ parametri.tasso_bfp_ordinario.valore if parametri and parametri.tasso_bfp_ordinario is defined else 2.5 }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="bsfAnni" class="form-label">Anni</label>
+                        <input type="number" class="form-control" id="bsfAnni" name="anni"
+                               value="{{ parametri.anni_simulazione.valore if parametri and parametri.anni_simulazione is defined else 22 }}" min="1" max="50">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-primary w-100" onclick="calcolaBsf()">
+                            <i class="bi bi-play-fill"></i> Calcola
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results area (hidden until calculated) -->
+    <div id="bsfResults" style="display:none;">
+        <!-- Summary -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Differenza Finale</p>
+                        <h4 class="mb-0 fw-bold" id="bsfDiffFinale">—</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-1 small">Rendimento Medio BSF</p>
+                        <h4 class="mb-0 fw-bold" id="bsfRendMedio">—</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-transparent border-0 fw-semibold">
+                <i class="bi bi-graph-up me-1"></i> Confronto BSF vs BFP Ordinario
+            </div>
+            <div class="card-body">
+                <div id="chartBsf" style="width:100%;height:400px;"></div>
+            </div>
+        </div>
+
+        <!-- DataTable -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-transparent border-0 fw-semibold">
+                <i class="bi bi-table me-1"></i> Dettaglio Annuale
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="bsfTable" class="table table-striped table-hover align-middle" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Anno</th>
+                                <th class="text-end">Importo BSF</th>
+                                <th class="text-end">Importo BFP Ord.</th>
+                                <th class="text-end">Differenza</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bsfTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function getPlotlyTheme() {
+        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: isDark ? '#dee2e6' : '#495057' },
+            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f'],
+            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
+        };
+    }
+
+    function getPlotlyLayout(title) {
+        var theme = getPlotlyTheme();
+        return Object.assign({}, theme, {
+            title: { text: title, font: { size: 14 } },
+            margin: { t: 40, r: 20, b: 40, l: 70 },
+            autosize: true
+        });
+    }
+
+    var plotlyConfig = { responsive: true, displayModeBar: false };
+    var dtInstance = null;
+
+    window.calcolaBsf = function() {
+        var data = {
+            importo: parseFloat(document.getElementById('bsfImporto').value),
+            tasso_bsf: parseFloat(document.getElementById('bsfTassoBsf').value),
+            tasso_bfp_ord: parseFloat(document.getElementById('bsfTassoBfp').value),
+            anni: parseInt(document.getElementById('bsfAnni').value)
+        };
+
+        PM.Loading.show();
+        PM.apiCall('{{ url_for("simulatore_bp.bsf_calcola") }}', 'POST', data).then(function(response) {
+            PM.Loading.hide();
+            renderResults(response.data || response);
+        }).catch(function(err) {
+            PM.Loading.hide();
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    function renderResults(results) {
+        document.getElementById('bsfResults').style.display = 'block';
+
+        if (results.length > 0) {
+            var last = results[results.length - 1];
+            document.getElementById('bsfDiffFinale').textContent = PM.Fmt.currency(last.differenza);
+
+            var importoIniziale = parseFloat(document.getElementById('bsfImporto').value);
+            var rendMedio = importoIniziale > 0 ? ((last.importo_bsf / importoIniziale - 1) / results.length * 100) : 0;
+            document.getElementById('bsfRendMedio').textContent = PM.Fmt.percent(rendMedio);
+        }
+
+        // Chart
+        var anni = results.map(function(r) { return r.anno; });
+        var bsfValues = results.map(function(r) { return r.importo_bsf; });
+        var bfpValues = results.map(function(r) { return r.importo_bfp_ord; });
+
+        var traces = [
+            { x: anni, y: bsfValues, name: 'BSF', type: 'scatter', mode: 'lines+markers', line: { color: '#4e79a7', width: 2 } },
+            { x: anni, y: bfpValues, name: 'BFP Ordinario', type: 'scatter', mode: 'lines+markers', line: { color: '#f28e2b', width: 2 } }
+        ];
+
+        var layout = getPlotlyLayout('');
+        layout.xaxis = Object.assign(layout.xaxis || {}, { title: 'Anno', dtick: 1 });
+        layout.yaxis = Object.assign(layout.yaxis || {}, { title: 'Importo (\u20ac)', tickprefix: '\u20ac ' });
+        layout.legend = { orientation: 'h', y: -0.2 };
+        Plotly.newPlot('chartBsf', traces, layout, plotlyConfig);
+
+        // Table
+        var tbody = document.getElementById('bsfTableBody');
+        tbody.innerHTML = '';
+        results.forEach(function(r) {
+            var diffClass = r.differenza >= 0 ? 'text-success' : 'text-danger';
+            tbody.innerHTML += '<tr>' +
+                '<td>' + r.anno + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(r.importo_bsf) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(r.importo_bfp_ord) + '</td>' +
+                '<td class="text-end ' + diffClass + '">' + PM.Fmt.currency(r.differenza) + '</td>' +
+                '</tr>';
+        });
+
+        if (dtInstance) { dtInstance.destroy(); }
+        dtInstance = PM.DT.init('#bsfTable', { paging: false, searching: false, info: false });
+    }
+
+    // Theme toggle
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        setTimeout(function() {
+            if (document.getElementById('bsfResults').style.display !== 'none') {
+                var layout = getPlotlyLayout('');
+                layout.xaxis = Object.assign(layout.xaxis || {}, { title: 'Anno', dtick: 1 });
+                layout.yaxis = Object.assign(layout.yaxis || {}, { title: 'Importo (\u20ac)', tickprefix: '\u20ac ' });
+                layout.legend = { orientation: 'h', y: -0.2 };
+                Plotly.relayout('chartBsf', layout);
+            }
+        }, 100);
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}Obbligazioni - GestPTF{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-bank me-2"></i>Obbligazioni / BTP</h4>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="bondShowAll" onchange="toggleInattiviBond()">
+                <label class="form-check-label small" for="bondShowAll">Mostra venduti</label>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bondModal" onclick="resetBondForm()">
+                <i class="bi bi-plus-lg me-1"></i> Nuova Obbligazione
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">Totale Investito</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_investito|currency if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small">N. Posizioni</p>
+                    <h5 class="mb-0 fw-bold">{{ summary.totale_count if summary else '—' }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-table me-1"></i> Lista Obbligazioni
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="bondTable" class="table table-striped table-hover align-middle" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>ISIN</th>
+                            <th>Nome</th>
+                            <th>Data Acquisto</th>
+                            <th class="text-end">Quantit&agrave;</th>
+                            <th class="text-end">Prezzo Acquisto</th>
+                            <th class="text-end">Commissioni</th>
+                            <th class="text-end">Rateo Lordo</th>
+                            <th class="text-end">Rit. Rateo</th>
+                            <th class="text-end">Rit. Dis.</th>
+                            <th>Uscita</th>
+                            <th>Coeff. Ind.</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bond in records %}
+                        <tr data-id="{{ bond.id }}" class="{{ 'table-secondary opacity-50' if not bond.attivo else '' }}">
+                            <td>{{ bond.isin }}</td>
+                            <td>
+                                {{ bond.nome }}
+                                {% if not bond.attivo %}<span class="badge bg-secondary ms-1">Venduto</span>{% endif %}
+                            </td>
+                            <td>{{ bond.data_acquisto }}</td>
+                            <td class="text-end">{{ bond.quantita }}</td>
+                            <td class="text-end">{{ bond.prezzo_acquisto|currency }}</td>
+                            <td class="text-end">{{ bond.commissioni|currency }}</td>
+                            <td class="text-end">{{ bond.rateo_lordo|currency }}</td>
+                            <td class="text-end">{{ bond.ritenuta_rateo|currency }}</td>
+                            <td class="text-end">{{ bond.ritenuta_dis|currency }}</td>
+                            <td class="text-end">{{ bond.uscita|currency }}</td>
+                            <td class="text-end">{{ bond.coeff_indicizz }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn {{ 'btn-outline-secondary' if bond.attivo else 'btn-outline-success' }}"
+                                            onclick="toggleAttivo('bond', {{ bond.id }}, {{ 0 if bond.attivo else 1 }})"
+                                            title="{{ 'Segna come venduto' if bond.attivo else 'Riattiva' }}">
+                                        <i class="bi {{ 'bi-eye-slash' if bond.attivo else 'bi-eye' }}"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick='editBond({{ bond|tojson }})' title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteBond({{ bond.id }})" title="Elimina">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Riepilogo per Titolo -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent border-0 fw-semibold">
+            <i class="bi bi-collection me-1"></i> Riepilogo per Titolo
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ISIN</th>
+                            <th>Nome</th>
+                            <th class="text-end">Quantit&agrave; Totale</th>
+                            <th class="text-end">Totale Uscita</th>
+                            <th class="text-end">Peso %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in riepilogo %}
+                        <tr>
+                            <td>{{ r.isin }}</td>
+                            <td>{{ r.nome }}</td>
+                            <td class="text-end">{{ r.totale_quantita }}</td>
+                            <td class="text-end">{{ r.totale_uscita|currency }}</td>
+                            <td class="text-end">{{ '{:.2f}'.format(r.peso_pct) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Bond -->
+<div class="modal fade" id="bondModal" tabindex="-1" aria-labelledby="bondModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bondModalLabel">Nuova Obbligazione</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bondForm">
+                    <input type="hidden" id="bondId" name="id">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bondIsin" class="form-label">ISIN</label>
+                            <input type="text" class="form-control" id="bondIsin" name="isin" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="bondNome" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="bondNome" name="nome" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="bondDataAcquisto" class="form-label">Data Acquisto</label>
+                            <input type="date" class="form-control" id="bondDataAcquisto" name="data_acquisto" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bondQuantita" class="form-label">Quantit&agrave;</label>
+                            <input type="number" step="any" class="form-control" id="bondQuantita" name="quantita" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bondPrezzoAcquisto" class="form-label">Prezzo Acquisto</label>
+                            <input type="number" step="0.0001" class="form-control" id="bondPrezzoAcquisto" name="prezzo_acquisto" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="bondCommissioni" class="form-label">Commissioni</label>
+                            <input type="number" step="0.01" class="form-control" id="bondCommissioni" name="commissioni" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bondRateoLordo" class="form-label">Rateo Lordo</label>
+                            <input type="number" step="0.01" class="form-control" id="bondRateoLordo" name="rateo_lordo" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bondRitenutaRateo" class="form-label">Rit. Rateo</label>
+                            <input type="number" step="0.01" class="form-control" id="bondRitenutaRateo" name="ritenuta_rateo" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="bondRitenutaDis" class="form-label">Rit. Dis.</label>
+                            <input type="number" step="0.01" class="form-control" id="bondRitenutaDis" name="ritenuta_dis" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bondUscita" class="form-label">Uscita</label>
+                            <input type="number" step="0.01" class="form-control" id="bondUscita" name="uscita" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bondCoeffIndicizz" class="form-label">Coeff. Indicizzazione</label>
+                            <input type="number" step="0.000001" class="form-control" id="bondCoeffIndicizz" name="coeff_indicizz" value="1">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveBond()">
+                    <i class="bi bi-check-lg me-1"></i> Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var table = PM.DT.init('#bondTable', {
+        order: [[2, 'desc']],
+        scrollX: true,
+        columnDefs: [
+            { targets: -1, orderable: false, searchable: false }
+        ]
+    });
+    PM.colorPLCells();
+
+    window.resetBondForm = function() {
+        document.getElementById('bondForm').reset();
+        document.getElementById('bondId').value = '';
+        document.getElementById('bondCoeffIndicizz').value = '1';
+        document.getElementById('bondModalLabel').textContent = 'Nuova Obbligazione';
+    };
+
+    window.editBond = function(bond) {
+        document.getElementById('bondId').value = bond.id;
+        document.getElementById('bondIsin').value = bond.isin;
+        document.getElementById('bondNome').value = bond.nome;
+        document.getElementById('bondDataAcquisto').value = bond.data_acquisto;
+        document.getElementById('bondQuantita').value = bond.quantita;
+        document.getElementById('bondPrezzoAcquisto').value = bond.prezzo_acquisto;
+        document.getElementById('bondCommissioni').value = bond.commissioni;
+        document.getElementById('bondRateoLordo').value = bond.rateo_lordo;
+        document.getElementById('bondRitenutaRateo').value = bond.ritenuta_rateo;
+        document.getElementById('bondRitenutaDis').value = bond.ritenuta_dis;
+        document.getElementById('bondUscita').value = bond.uscita;
+        document.getElementById('bondCoeffIndicizz').value = bond.coeff_indicizz;
+        document.getElementById('bondModalLabel').textContent = 'Modifica Obbligazione';
+        new bootstrap.Modal(document.getElementById('bondModal')).show();
+    };
+
+    window.saveBond = function() {
+        var form = document.getElementById('bondForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        var id = document.getElementById('bondId').value;
+        var data = {
+            isin: document.getElementById('bondIsin').value,
+            nome: document.getElementById('bondNome').value,
+            data_acquisto: document.getElementById('bondDataAcquisto').value,
+            quantita: parseFloat(document.getElementById('bondQuantita').value),
+            prezzo_acquisto: parseFloat(document.getElementById('bondPrezzoAcquisto').value),
+            commissioni: parseFloat(document.getElementById('bondCommissioni').value) || 0,
+            rateo_lordo: parseFloat(document.getElementById('bondRateoLordo').value) || 0,
+            ritenuta_rateo: parseFloat(document.getElementById('bondRitenutaRateo').value) || 0,
+            ritenuta_dis: parseFloat(document.getElementById('bondRitenutaDis').value) || 0,
+            uscita: parseFloat(document.getElementById('bondUscita').value) || 0,
+            coeff_indicizz: parseFloat(document.getElementById('bondCoeffIndicizz').value) || 1
+        };
+
+        var url = '/bond/' + (id ? id : '');
+        var method = id ? 'PUT' : 'POST';
+
+        PM.apiCall(url, method, data).then(function() {
+            bootstrap.Modal.getInstance(document.getElementById('bondModal')).hide();
+            PM.Toast.show('Obbligazione salvata con successo', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.deleteBond = function(id) {
+        PM.confirmAction('Sei sicuro di voler eliminare questa obbligazione?', function() {
+            PM.apiCall('/bond/' + id, 'DELETE').then(function() {
+                PM.Toast.show('Obbligazione eliminata', 'success');
+                location.reload();
+            }).catch(function(err) {
+                PM.Toast.show('Errore: ' + err.message, 'error');
+            });
+        });
+    };
+
+    window.toggleAttivo = function(tipo, id, nuovoStato) {
+        PM.apiCall('/' + tipo + '/' + id, 'PUT', { attivo: nuovoStato }).then(function() {
+            PM.Toast.show(nuovoStato ? 'Riattivato' : 'Segnato come venduto', 'success');
+            location.reload();
+        }).catch(function(err) {
+            PM.Toast.show('Errore: ' + err.message, 'error');
+        });
+    };
+
+    window.toggleInattiviBond = function() {
+        var show = document.getElementById('bondShowAll').checked;
+        document.querySelectorAll('#bondTable tbody tr.table-secondary').forEach(function(row) {
+            row.style.display = show ? '' : 'none';
+        });
+    };
+
+    // Hide inactive by default
+    toggleInattiviBond();
+})();
+</script>
+{% endblock %}
