@@ -115,6 +115,22 @@ def valori_live():
             ).fetchone()
             tfr_val = row[0] if row else 0
 
+        # Immobili (from dedicated table, fallback to patrimonio)
+        from services.immobili_service import get_immobili_summary
+        imm_summary = get_immobili_summary()
+        imm_esteri = imm_summary.get("totale_esteri", 0) if isinstance(imm_summary, dict) and "error" not in imm_summary else 0
+        imm_italia = imm_summary.get("totale_italia", 0) if isinstance(imm_summary, dict) and "error" not in imm_summary else 0
+        if not imm_esteri:
+            row = db.execute(
+                "SELECT immobili_esteri FROM patrimonio WHERE immobili_esteri > 0 ORDER BY data DESC LIMIT 1"
+            ).fetchone()
+            imm_esteri = row[0] if row else 0
+        if not imm_italia:
+            row = db.execute(
+                "SELECT immobile_italia FROM patrimonio WHERE immobile_italia > 0 ORDER BY data DESC LIMIT 1"
+            ).fetchone()
+            imm_italia = row[0] if row else 0
+
         db.close()
 
         # Fineco values (ETF, BTP, CD/XEON)
@@ -126,6 +142,8 @@ def valori_live():
             "bfp": round(bfp_val or 0, 2),
             "fondo_pensione": round(fp_val or 0, 2),
             "tfr_netto": round(tfr_val or 0, 2),
+            "immobili_esteri": round(imm_esteri or 0, 2),
+            "immobile_italia": round(imm_italia or 0, 2),
         }
 
         # Include Fineco values if available

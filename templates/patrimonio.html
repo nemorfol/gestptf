@@ -401,7 +401,8 @@
                 var d = resp.data;
                 var liveFields = {
                     bfp: 'patBfp', fondo_pensione: 'patFondoPensione',
-                    tfr_netto: 'patTfrNetto', etf: 'patEtf', btp: 'patBtp', cd: 'patCd'
+                    tfr_netto: 'patTfrNetto', etf: 'patEtf', btp: 'patBtp', cd: 'patCd',
+                    immobili_esteri: 'patImmobiliEsteri', immobile_italia: 'patImmobileItalia'
                 };
                 for (var key in liveFields) {
                     if (d[key] != null) {
