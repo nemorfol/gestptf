@@ -573,6 +573,39 @@
      PUBLIC API  -  window.PM
      ======================================================================== */
 
+  /* ========================================================================
+     12. PLOTLY THEME HELPERS
+     ======================================================================== */
+  function plotlyIsDark() {
+    return document.documentElement.getAttribute('data-bs-theme') === 'dark';
+  }
+
+  function plotlyTheme() {
+    var isDark = plotlyIsDark();
+    return {
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      font: { color: isDark ? '#dee2e6' : '#495057' },
+      colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'],
+      xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+      yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+      hoverlabel: {
+        bgcolor: isDark ? '#2b3035' : '#fff',
+        bordercolor: isDark ? '#495057' : '#dee2e6',
+        font: { color: isDark ? '#dee2e6' : '#212529', size: 13 }
+      }
+    };
+  }
+
+  function plotlyLayout(title) {
+    var theme = plotlyTheme();
+    return Object.assign({}, theme, {
+      title: title ? { text: title, font: { size: 14 } } : undefined,
+      margin: { t: title ? 40 : 20, r: 20, b: 40, l: 70 },
+      autosize: true
+    });
+  }
+
   window.PM = {
     Theme: ThemeManager,
     Sidebar: SidebarManager,
@@ -585,5 +618,6 @@
     Form: FormHelper,
     colorPLCells: colorPLCells,
     onDelegate: onDelegate,
+    Plotly: { theme: plotlyTheme, layout: plotlyLayout, isDark: plotlyIsDark },
   };
 })();

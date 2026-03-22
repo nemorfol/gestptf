@@ -128,21 +128,12 @@
 {% block extra_js %}
 <script>
 (function() {
-    function getPlotlyTheme() {
-        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        return {
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            font: { color: isDark ? '#dee2e6' : '#495057' },
-            colorway: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f'],
-            xaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' },
+    function getPlotlyTheme() { return PM.Plotly.theme(); },
             yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
         };
     }
 
-    function getPlotlyLayout(title) {
-        var theme = getPlotlyTheme();
-        return Object.assign({}, theme, {
+    function getPlotlyLayout(title) { return PM.Plotly.layout(title); }, theme, {
             title: { text: title, font: { size: 14 } },
             margin: { t: 40, r: 20, b: 40, l: 70 },
             autosize: true
