@@ -63,7 +63,7 @@
                     <tbody>
                         {% for tfr in records %}
                         <tr data-id="{{ tfr.id }}">
-                            <td>{{ tfr.data }}</td>
+                            <td>{{ tfr.data|date }}</td>
                             <td class="text-end">{{ tfr.valore_netto|currency }}</td>
                             <td class="text-end {{ 'text-success' if tfr.variazione and tfr.variazione >= 0 else 'text-danger' }}">
                                 {{ tfr.variazione|currency if tfr.variazione else '—' }}

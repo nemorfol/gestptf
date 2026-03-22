@@ -69,7 +69,7 @@
                                 {{ bond.nome }}
                                 {% if not bond.attivo %}<span class="badge bg-secondary ms-1">Venduto</span>{% endif %}
                             </td>
-                            <td>{{ bond.data_acquisto }}</td>
+                            <td>{{ bond.data_acquisto|date }}</td>
                             <td class="text-end">{{ bond.quantita }}</td>
                             <td class="text-end">{{ bond.prezzo_acquisto|currency }}</td>
                             <td class="text-end">{{ bond.commissioni|currency }}</td>

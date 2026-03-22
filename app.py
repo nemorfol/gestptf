@@ -53,6 +53,13 @@ def create_app():
         except (ValueError, TypeError):
             return "0"
 
+    @app.template_filter('date')
+    def date_filter(value):
+        """Strip time part from date strings (e.g. '2025-01-01 00:00:00' -> '2025-01-01')."""
+        if value:
+            return str(value)[:10]
+        return ''
+
     # Also expose as functions for templates that use PM_fmt_currency() style
     @app.context_processor
     def inject_formatters():

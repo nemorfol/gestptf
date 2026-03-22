@@ -70,7 +70,7 @@
                     <tbody>
                         {% for fp in records %}
                         <tr data-id="{{ fp.id }}">
-                            <td>{{ fp.data }}</td>
+                            <td>{{ fp.data|date }}</td>
                             <td class="text-end">{{ fp.valore|currency }}</td>
                             <td class="text-end">{{ fp.contributo|currency }}</td>
                             <td class="text-end">{{ '{:.2f}'.format(fp.rendimento) if fp.rendimento else '—' }}%</td>

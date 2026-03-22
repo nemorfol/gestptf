@@ -113,7 +113,7 @@
                         <tr data-id="{{ bfp.id }}">
                             <td>{{ bfp.tipologia }}</td>
                             <td>{{ bfp.serie }}</td>
-                            <td>{{ bfp.data_sottoscrizione }}</td>
+                            <td>{{ bfp.data_sottoscrizione|date }}</td>
                             <td>{{ bfp.scadenza }}</td>
                             <td class="text-end">{{ bfp.valore_nominale|currency }}</td>
                             <td class="text-end">{{ bfp.valore_lordo_attuale|currency }}</td>
@@ -126,7 +126,7 @@
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-success{% if not bfp.has_coefficienti %} disabled{% endif %}"
-                                            {% if bfp.has_coefficienti %}onclick="showPianoRimborso({{ bfp.id }}, '{{ bfp.tipologia }}', '{{ bfp.serie }}', '{{ bfp.data_sottoscrizione }}')"{% endif %}
+                                            {% if bfp.has_coefficienti %}onclick="showPianoRimborso({{ bfp.id }}, '{{ bfp.tipologia }}', '{{ bfp.serie }}', '{{ bfp.data_sottoscrizione|date }}')"{% endif %}
                                             title="{% if bfp.has_coefficienti %}Piano Rimborso{% else %}Coefficienti non disponibili - importa i PDF{% endif %}">
                                         <i class="bi bi-calendar3"></i>
                                     </button>

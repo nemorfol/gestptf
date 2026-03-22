@@ -65,7 +65,7 @@
                                 {{ etf.nome }}
                                 {% if not etf.attivo %}<span class="badge bg-secondary ms-1">Venduto</span>{% endif %}
                             </td>
-                            <td>{{ etf.data_acquisto }}</td>
+                            <td>{{ etf.data_acquisto|date }}</td>
                             <td>{{ etf.quantita }}</td>
                             <td class="text-end">{{ etf.prezzo_acquisto|currency }}</td>
                             <td class="text-end">{{ etf.commissioni|currency }}</td>

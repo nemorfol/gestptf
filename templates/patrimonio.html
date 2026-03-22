@@ -72,7 +72,7 @@
                     <tbody>
                         {% for p in records %}
                         <tr data-id="{{ p.id }}">
-                            <td>{{ p.data }}</td>
+                            <td>{{ p.data|date }}</td>
                             <td class="text-end">{{ p.immobili_esteri|currency }}</td>
                             <td class="text-end">{{ p.immobile_italia|currency }}</td>
                             <td class="text-end">{{ p.fondo_pensione|currency }}</td>
@@ -159,7 +159,7 @@
                             <select class="form-select" id="patCopyFrom" onchange="copyFromRecord(this.value)">
                                 <option value="">— Non copiare —</option>
                                 {% for p in records|reverse %}
-                                <option value="{{ p.id }}" {{ 'selected' if loop.first }}>{{ p.data }}{% if loop.first %} (ultimo){% endif %}</option>
+                                <option value="{{ p.id }}" {{ 'selected' if loop.first }}>{{ p.data|date }}{% if loop.first %} (ultimo){% endif %}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -286,7 +286,7 @@
     assetClasses.forEach(function(c) { dataByClass[c] = []; });
 
     {% for p in records %}
-    dates.push('{{ p.data }}');
+    dates.push('{{ p.data|date }}');
     {% for ac in ['immobili_esteri', 'immobile_italia', 'fondo_pensione', 'etf', 'bfp', 'btp', 'cash', 'cd', 'tfr_netto'] %}
     dataByClass['{{ ac }}'].push({{ p[ac]|default(0) }});
     {% endfor %}
