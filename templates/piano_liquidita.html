@@ -64,6 +64,7 @@
                             <th>Mese</th>
                             <th class="text-end">Liq. Entrata</th>
                             <th class="text-end">Accumulo BSF</th>
+                            <th class="text-end">Accumulo BFPi</th>
                             <th class="text-end">Accumulo Altro</th>
                             <th class="text-end">Totale BSF</th>
                             <th class="text-end">Totale Altro</th>
@@ -79,6 +80,7 @@
                             <td>{{ liq.mese }}</td>
                             <td class="text-end">{{ liq.liquidita_entrata|currency }}</td>
                             <td class="text-end">{{ liq.accumulo_bsf|currency }}</td>
+                            <td class="text-end">{{ liq.accumulo_bfpi|currency }}</td>
                             <td class="text-end">{{ liq.accumulo_altro|currency }}</td>
                             <td class="text-end fw-bold">{{ liq.totale_bsf|currency }}</td>
                             <td class="text-end fw-bold">{{ liq.totale_altro|currency }}</td>
