@@ -30,6 +30,6 @@ desktop.ini
 # Excel temp files
 ~$*
 
-# Screenshots
-screenshots/
+# Screenshots (personal, root folder only)
+/screenshots/
 
