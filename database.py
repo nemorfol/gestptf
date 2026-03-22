@@ -236,6 +236,7 @@ def init_db():
             data_inizio_piano DATE,
             attiva INTEGER DEFAULT 0,
             valore_vendita REAL NOT NULL DEFAULT 0,
+            valore_vendita_immediata REAL DEFAULT 0,
             prezzo_acquisto REAL DEFAULT 0,
             data_acquisto DATE,
             anticipo REAL DEFAULT 0,
@@ -255,6 +256,19 @@ def init_db():
         );
 
         CREATE INDEX IF NOT EXISTS idx_vrp_immobile ON vendita_riserva(immobile_id);
+
+        CREATE TABLE IF NOT EXISTS addizionali_irpef (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo TEXT NOT NULL,
+            nome TEXT NOT NULL,
+            regione TEXT,
+            reddito_da REAL DEFAULT 0,
+            reddito_a REAL DEFAULT 999999999,
+            aliquota REAL NOT NULL DEFAULT 0,
+            anno INTEGER DEFAULT 2025
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_addizionali_tipo ON addizionali_irpef(tipo, nome);
     """)
 
     # Insert default parameters

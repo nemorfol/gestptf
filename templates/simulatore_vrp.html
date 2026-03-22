@@ -57,22 +57,27 @@
             <form id="vrpForm">
                 <h6 class="text-muted mb-3"><i class="bi bi-house me-1"></i> Dati Immobile e Vendita</h6>
                 <div class="row g-3 mb-4">
-                    <div class="col-md-4 col-lg-3">
-                        <label for="vrpValoreVendita" class="form-label">Valore di Vendita (&euro;)</label>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpValoreVendita" class="form-label">Vendita con Riserva (&euro;)</label>
                         <input type="number" step="0.01" class="form-control" id="vrpValoreVendita"
                                name="valore_vendita" value="0" required>
                     </div>
-                    <div class="col-md-4 col-lg-3">
-                        <label for="vrpPrezzoAcquisto" class="form-label">Prezzo Acquisto Originale (&euro;)</label>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpValoreVenditaImmediata" class="form-label">Vendita Immediata (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpValoreVenditaImmediata"
+                               name="valore_vendita_immediata" value="0">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpPrezzoAcquisto" class="form-label">Prezzo Acquisto (&euro;)</label>
                         <input type="number" step="0.01" class="form-control" id="vrpPrezzoAcquisto"
                                name="prezzo_acquisto" value="0">
                     </div>
-                    <div class="col-md-4 col-lg-3">
+                    <div class="col-md-4 col-lg-2">
                         <label for="vrpDataAcquisto" class="form-label">Data Acquisto</label>
                         <input type="date" class="form-control" id="vrpDataAcquisto" name="data_acquisto">
                     </div>
-                    <div class="col-md-4 col-lg-3">
-                        <label for="vrpSpeseNotarili" class="form-label">Spese Notarili/Legali (&euro;)</label>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpSpeseNotarili" class="form-label">Spese Notarili (&euro;)</label>
                         <input type="number" step="0.01" class="form-control" id="vrpSpeseNotarili"
                                name="spese_notarili" value="0">
                     </div>
@@ -99,17 +104,47 @@
 
                 <h6 class="text-muted mb-3"><i class="bi bi-receipt me-1"></i> Fiscalit&agrave; e Costi Annuali</h6>
                 <div class="row g-3 mb-4">
-                    <div class="col-md-4 col-lg-3">
+                    <div class="col-md-4 col-lg-2">
                         <label for="vrpAliquota" class="form-label">Aliquota Plusvalenza (%)</label>
                         <input type="number" step="0.01" class="form-control" id="vrpAliquota"
                                name="aliquota_plusvalenza" value="0">
                     </div>
-                    <div class="col-md-4 col-lg-3">
-                        <label for="vrpImpostaRegistro" class="form-label">Imposta Registro Annuale (&euro;)</label>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpRedditoAnnuo" class="form-label">Reddito Annuo (&euro;)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpRedditoAnnuo"
+                               name="reddito_annuo" value="0" placeholder="Per calcolo IRPEF"
+                               onchange="updateAddizionali()">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpRegione" class="form-label">Regione</label>
+                        <select class="form-select" id="vrpRegione" onchange="onRegioneChange()">
+                            <option value="">— Manuale —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpComune" class="form-label">Comune</label>
+                        <select class="form-select" id="vrpComune" onchange="onComuneChange()">
+                            <option value="">— Manuale —</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpAddRegionale" class="form-label">Add. Regionale (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpAddRegionale"
+                               name="addizionale_regionale" value="1.73">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpAddComunale" class="form-label">Add. Comunale (%)</label>
+                        <input type="number" step="0.01" class="form-control" id="vrpAddComunale"
+                               name="addizionale_comunale" value="0.8">
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <label for="vrpImpostaRegistro" class="form-label">Imp. Registro (&euro;/anno)</label>
                         <input type="number" step="0.01" class="form-control" id="vrpImpostaRegistro"
                                name="imposta_registro" value="0">
                     </div>
-                    <div class="col-md-4 col-lg-3">
+                    <div class="col-md-4 col-lg-2">
                         <label for="vrpImu" class="form-label">IMU Annuale (&euro;)</label>
                         <input type="number" step="0.01" class="form-control" id="vrpImu"
                                name="imu_annuale" value="0">
@@ -223,8 +258,9 @@
             <div class="col-md-6 col-lg-3">
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body text-center">
-                        <p class="text-muted mb-1 small">VRP vs Investimento Immediato</p>
-                        <h4 class="mb-0 fw-bold" id="vrpVsInvestito">--</h4>
+                        <p class="text-muted mb-1 small">IRPEF + Addizionali Totali</p>
+                        <h4 class="mb-0 fw-bold text-danger" id="vrpTotaleIrpef">--</h4>
+                        <small class="text-muted" id="vrpIrpefNote"></small>
                     </div>
                 </div>
             </div>
@@ -284,6 +320,8 @@
                                     <th class="text-end">Imp. Registro</th>
                                     <th class="text-end">IMU</th>
                                     <th class="text-end">Assicuraz.</th>
+                                    <th class="text-end">IRPEF</th>
+                                    <th class="text-end">Addizionali</th>
                                     <th class="text-end">Flusso Netto</th>
                                     <th class="text-end">Flusso Cumulato</th>
                                 </tr>
@@ -343,6 +381,69 @@
     var dtCashflow = null;
     var dtAmmortamento = null;
 
+    // --- Load regioni and comuni for addizionali ---
+    fetch('/impostazioni/addizionali/regioni')
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (!resp.success) return;
+            var sel = document.getElementById('vrpRegione');
+            resp.data.forEach(function(nome) {
+                var opt = document.createElement('option');
+                opt.value = nome;
+                opt.textContent = nome;
+                sel.appendChild(opt);
+            });
+        });
+
+    window.onRegioneChange = function() {
+        var regione = document.getElementById('vrpRegione').value;
+        var comuneSel = document.getElementById('vrpComune');
+        comuneSel.innerHTML = '<option value="">— Manuale —</option>';
+
+        if (!regione) return;
+
+        // Load comuni for this region
+        fetch('/impostazioni/addizionali/comuni?regione=' + encodeURIComponent(regione))
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                if (!resp.success) return;
+                resp.data.forEach(function(c) {
+                    var opt = document.createElement('option');
+                    opt.value = c.aliquota;
+                    opt.textContent = c.nome + ' (' + c.aliquota + '%)';
+                    comuneSel.appendChild(opt);
+                });
+            });
+
+        // Update regionale rate based on reddito
+        updateAddizionali();
+    };
+
+    window.onComuneChange = function() {
+        var val = document.getElementById('vrpComune').value;
+        if (val) {
+            document.getElementById('vrpAddComunale').value = val;
+        }
+    };
+
+    window.updateAddizionali = function() {
+        var regione = document.getElementById('vrpRegione').value;
+        var reddito = parseFloat(document.getElementById('vrpRedditoAnnuo').value) || 0;
+        if (!regione || !reddito) return;
+
+        fetch('/impostazioni/addizionali/calcola', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ regione: regione, reddito: reddito })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (resp.success && resp.data.found) {
+                document.getElementById('vrpAddRegionale').value = resp.data.aliquota;
+            }
+        });
+    };
+
     // --- Immobile selector: pre-fill form ---
     window.onImmobileChange = function(id) {
         if (!id) return;
@@ -370,6 +471,7 @@
                 var s = resp.data;
                 document.getElementById('vrpImmobile').value = s.immobile_id || '';
                 document.getElementById('vrpValoreVendita').value = s.valore_vendita || 0;
+                document.getElementById('vrpValoreVenditaImmediata').value = s.valore_vendita_immediata || 0;
                 document.getElementById('vrpPrezzoAcquisto').value = s.prezzo_acquisto || 0;
                 document.getElementById('vrpDataAcquisto').value = (s.data_acquisto || '').substring(0, 10);
                 document.getElementById('vrpAnticipo').value = s.anticipo || 0;
@@ -378,6 +480,9 @@
                 document.getElementById('vrpSpeseNotarili').value = s.spese_notarili || 0;
                 document.getElementById('vrpAliquota').value = s.aliquota_plusvalenza || 26;
                 document.getElementById('vrpImpostaRegistro').value = s.imposta_registro || 0;
+                document.getElementById('vrpRedditoAnnuo').value = s.reddito_annuo || 0;
+                document.getElementById('vrpAddRegionale').value = s.addizionale_regionale || 1.73;
+                document.getElementById('vrpAddComunale').value = s.addizionale_comunale || 0.8;
                 document.getElementById('vrpImu').value = s.imu_annuale || 0;
                 document.getElementById('vrpAssicurazione').value = s.costo_assicurazione || 0;
                 document.getElementById('vrpTassoInvestimento').value = s.tasso_investimento || 0;
@@ -398,6 +503,7 @@
             immobile_id: document.getElementById('vrpImmobile').value || null,
             nome: document.getElementById('vrpNome').value || 'Simulazione VRP',
             valore_vendita: parseFloat(document.getElementById('vrpValoreVendita').value) || 0,
+            valore_vendita_immediata: parseFloat(document.getElementById('vrpValoreVenditaImmediata').value) || 0,
             prezzo_acquisto: parseFloat(document.getElementById('vrpPrezzoAcquisto').value) || 0,
             data_acquisto: document.getElementById('vrpDataAcquisto').value,
             anticipo: parseFloat(document.getElementById('vrpAnticipo').value) || 0,
@@ -405,6 +511,9 @@
             tasso_interesse: parseFloat(document.getElementById('vrpTassoInteresse').value) || 0,
             spese_notarili: parseFloat(document.getElementById('vrpSpeseNotarili').value) || 0,
             aliquota_plusvalenza: parseFloat(document.getElementById('vrpAliquota').value) || 26,
+            reddito_annuo: parseFloat(document.getElementById('vrpRedditoAnnuo').value) || 0,
+            addizionale_regionale: parseFloat(document.getElementById('vrpAddRegionale').value) || 0,
+            addizionale_comunale: parseFloat(document.getElementById('vrpAddComunale').value) || 0,
             imposta_registro: parseFloat(document.getElementById('vrpImpostaRegistro').value) || 0,
             imu_annuale: parseFloat(document.getElementById('vrpImu').value) || 0,
             costo_assicurazione: parseFloat(document.getElementById('vrpAssicurazione').value) || 0,
@@ -445,6 +554,7 @@
     window.calcolaVrp = function() {
         var data = {
             valore_vendita: parseFloat(document.getElementById('vrpValoreVendita').value) || 0,
+            valore_vendita_immediata: parseFloat(document.getElementById('vrpValoreVenditaImmediata').value) || 0,
             prezzo_acquisto: parseFloat(document.getElementById('vrpPrezzoAcquisto').value) || 0,
             data_acquisto: document.getElementById('vrpDataAcquisto').value,
             anticipo: parseFloat(document.getElementById('vrpAnticipo').value) || 0,
@@ -452,6 +562,9 @@
             tasso_interesse: parseFloat(document.getElementById('vrpTassoInteresse').value) || 0,
             spese_notarili: parseFloat(document.getElementById('vrpSpeseNotarili').value) || 0,
             aliquota_plusvalenza: parseFloat(document.getElementById('vrpAliquota').value) || 26,
+            reddito_annuo: parseFloat(document.getElementById('vrpRedditoAnnuo').value) || 0,
+            addizionale_regionale: parseFloat(document.getElementById('vrpAddRegionale').value) || 0,
+            addizionale_comunale: parseFloat(document.getElementById('vrpAddComunale').value) || 0,
             imposta_registro: parseFloat(document.getElementById('vrpImpostaRegistro').value) || 0,
             imu_annuale: parseFloat(document.getElementById('vrpImu').value) || 0,
             costo_assicurazione: parseFloat(document.getElementById('vrpAssicurazione').value) || 0,
@@ -505,9 +618,9 @@
         document.getElementById('vrpTassePlusvalenza').textContent = PM.Fmt.currency(r.imposta_plusvalenza);
         document.getElementById('vrpTassePlusvalenza').className = 'mb-0 fw-bold ' + (r.imposta_plusvalenza > 0 ? 'text-danger' : 'text-success');
 
-        var vsInvEl = document.getElementById('vrpVsInvestito');
-        vsInvEl.textContent = PM.Fmt.currency(r.differenza_vrp_vs_investito);
-        vsInvEl.className = 'mb-0 fw-bold ' + colorValue(r.differenza_vrp_vs_investito);
+        document.getElementById('vrpTotaleIrpef').textContent = PM.Fmt.currency(r.totale_tasse_reddito);
+        var irpefNote = 'IRPEF: ' + PM.Fmt.currency(r.totale_irpef) + ' | Add.: ' + PM.Fmt.currency(r.totale_addizionali);
+        document.getElementById('vrpIrpefNote').textContent = irpefNote;
 
         // --- Chart 1: Cash Flow ---
         var cfAnni = cashflow.map(function(c) { return 'Anno ' + c.anno; });
@@ -562,6 +675,8 @@
                 '<td class="text-end">' + PM.Fmt.currency(c.imposta_registro) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.imu) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.assicurazione) + '</td>' +
+                '<td class="text-end text-danger">' + PM.Fmt.currency(c.irpef || 0) + '</td>' +
+                '<td class="text-end text-danger">' + PM.Fmt.currency(c.addizionali || 0) + '</td>' +
                 '<td class="text-end ' + colorValue(c.flusso_netto) + ' fw-bold">' + PM.Fmt.currency(c.flusso_netto) + '</td>' +
                 '<td class="text-end ' + colorValue(c.flusso_cumulato) + ' fw-bold">' + PM.Fmt.currency(c.flusso_cumulato) + '</td>' +
                 '</tr>';

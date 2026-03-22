@@ -102,6 +102,60 @@ def calcola_rata_mensile_btpi(importo_netto, speranza_vita_anni):
         return {"error": str(e)}
 
 
+def calcola_irpef(reddito_imponibile, reddito_base=0):
+    """Calculate IRPEF using 2024-2026 Italian tax brackets.
+
+    Args:
+        reddito_imponibile: the additional income to tax (e.g. VRP installments)
+        reddito_base: existing annual income (to determine marginal bracket)
+
+    Returns dict with irpef, aliquota_marginale, aliquota_effettiva.
+    """
+    # Scaglioni IRPEF 2024-2026
+    scaglioni = [
+        (28000, 0.23),   # fino a 28.000€: 23%
+        (50000, 0.35),   # da 28.001 a 50.000€: 35%
+        (float("inf"), 0.43),  # oltre 50.000€: 43%
+    ]
+
+    def _irpef_su_reddito(reddito):
+        imposta = 0
+        precedente = 0
+        for limite, aliquota in scaglioni:
+            if reddito <= precedente:
+                break
+            imponibile_scaglione = min(reddito, limite) - precedente
+            if imponibile_scaglione > 0:
+                imposta += imponibile_scaglione * aliquota
+            precedente = limite
+        return round(imposta, 2)
+
+    # IRPEF on base income alone
+    irpef_base = _irpef_su_reddito(reddito_base)
+    # IRPEF on base + additional income
+    irpef_totale = _irpef_su_reddito(reddito_base + reddito_imponibile)
+    # Marginal IRPEF = difference
+    irpef_marginale = round(irpef_totale - irpef_base, 2)
+
+    # Marginal rate
+    aliquota_marginale = 0
+    reddito_totale = reddito_base + reddito_imponibile
+    for limite, aliquota in scaglioni:
+        if reddito_totale <= limite:
+            aliquota_marginale = aliquota
+            break
+
+    aliquota_effettiva = round(
+        irpef_marginale / reddito_imponibile * 100, 2
+    ) if reddito_imponibile > 0 else 0
+
+    return {
+        "irpef": irpef_marginale,
+        "aliquota_marginale": aliquota_marginale * 100,
+        "aliquota_effettiva": aliquota_effettiva,
+    }
+
+
 def simula_vendita_riserva(params):
     """Simulate sale with retention of title (vendita con riserva di proprietà).
 
@@ -119,6 +173,9 @@ def simula_vendita_riserva(params):
         tasso_interesse = float(params.get("tasso_interesse", 3.0))
         spese_notarili = float(params.get("spese_notarili", 3000))
         aliquota_plusvalenza = float(params.get("aliquota_plusvalenza", 26))
+        reddito_annuo = float(params.get("reddito_annuo", 0))
+        addizionale_regionale = float(params.get("addizionale_regionale", 1.73))
+        addizionale_comunale = float(params.get("addizionale_comunale", 0.8))
         imposta_registro = float(params.get("imposta_registro", 200))
         imu_annuale = float(params.get("imu_annuale", 0))
         costo_assicurazione = float(params.get("costo_assicurazione", 0))
@@ -193,7 +250,11 @@ def simula_vendita_riserva(params):
         cash_flow_annuale = []
         flusso_cumulato = 0
 
-        # Year 0: anticipo
+        # --- Year-by-year cash flow with IRPEF ---
+        totale_irpef = 0
+        totale_addizionali = 0
+
+        # Year 0: anticipo (not taxed as income - it's a capital payment)
         flusso_anno0 = anticipo - spese_notarili - imposta_plusvalenza
         flusso_cumulato = round(flusso_anno0, 2)
         cash_flow_annuale.append({
@@ -204,6 +265,8 @@ def simula_vendita_riserva(params):
             "imposta_registro": 0,
             "imu": 0,
             "assicurazione": 0,
+            "irpef": 0,
+            "addizionali": 0,
             "flusso_netto": round(flusso_anno0, 2),
             "flusso_cumulato": flusso_cumulato,
         })
@@ -211,33 +274,67 @@ def simula_vendita_riserva(params):
         for anno in range(1, durata_anni + 1):
             rate_anno = [p for p in piano_ammortamento if p["anno"] == anno]
             entrate = round(sum(p["rata"] for p in rate_anno), 2)
-            flusso_netto = round(entrate - costi_annuali, 2)
+            # Only interest portion is taxable income
+            interessi_anno = round(sum(p["quota_interessi"] for p in rate_anno), 2)
+
+            # IRPEF on interest income
+            irpef_anno = 0
+            addiz_anno = 0
+            if reddito_annuo > 0 and interessi_anno > 0:
+                irpef_result = calcola_irpef(interessi_anno, reddito_annuo)
+                irpef_anno = irpef_result["irpef"]
+                addiz_anno = round(
+                    interessi_anno * (addizionale_regionale + addizionale_comunale) / 100, 2
+                )
+            elif interessi_anno > 0:
+                # No base income: IRPEF on interest alone
+                irpef_result = calcola_irpef(interessi_anno, 0)
+                irpef_anno = irpef_result["irpef"]
+                addiz_anno = round(
+                    interessi_anno * (addizionale_regionale + addizionale_comunale) / 100, 2
+                )
+
+            totale_irpef += irpef_anno
+            totale_addizionali += addiz_anno
+
+            tasse_anno = irpef_anno + addiz_anno
+            flusso_netto = round(entrate - costi_annuali - tasse_anno, 2)
             flusso_cumulato = round(flusso_cumulato + flusso_netto, 2)
 
             cash_flow_annuale.append({
                 "anno": anno,
                 "entrate_rate": entrate,
+                "interessi_anno": interessi_anno,
                 "spese_notarili": 0,
                 "imposta_plusvalenza": 0,
                 "imposta_registro": round(imposta_registro, 2),
                 "imu": round(imu_annuale, 2),
                 "assicurazione": round(costo_assicurazione, 2),
+                "irpef": round(irpef_anno, 2),
+                "addizionali": round(addiz_anno, 2),
                 "flusso_netto": flusso_netto,
                 "flusso_cumulato": flusso_cumulato,
             })
 
+        totale_irpef = round(totale_irpef, 2)
+        totale_addizionali = round(totale_addizionali, 2)
+
         # --- Totals ---
         totale_costi_annuali = round(costi_annuali * durata_anni, 2)
+        totale_tasse = round(totale_irpef + totale_addizionali, 2)
         totale_costi = round(
-            spese_notarili + imposta_plusvalenza + totale_costi_annuali, 2
+            spese_notarili + imposta_plusvalenza + totale_costi_annuali + totale_tasse, 2
         )
         ricavo_netto_vrp = round(
             anticipo + totale_rate - totale_costi, 2
         )
 
         # --- Immediate sale comparison ---
+        valore_vendita_immediata = float(params.get("valore_vendita_immediata", 0))
+        if valore_vendita_immediata <= 0:
+            valore_vendita_immediata = valore_vendita
         ricavo_immediato = round(
-            valore_vendita - spese_notarili - imposta_plusvalenza, 2
+            valore_vendita_immediata - spese_notarili - imposta_plusvalenza, 2
         )
 
         # --- Opportunity cost: invest immediate proceeds ---
@@ -266,6 +363,7 @@ def simula_vendita_riserva(params):
         return {
             "riepilogo": {
                 "valore_vendita": round(valore_vendita, 2),
+                "valore_vendita_immediata": round(valore_vendita_immediata, 2),
                 "prezzo_acquisto": round(prezzo_acquisto, 2),
                 "anticipo": round(anticipo, 2),
                 "importo_finanziato": round(importo_finanziato, 2),
@@ -277,6 +375,9 @@ def simula_vendita_riserva(params):
                 "totale_rate": totale_rate,
                 "totale_interessi": totale_interessi,
                 "totale_costi": totale_costi,
+                "totale_irpef": totale_irpef,
+                "totale_addizionali": totale_addizionali,
+                "totale_tasse_reddito": totale_tasse,
                 "ricavo_netto_vrp": ricavo_netto_vrp,
                 "ricavo_immediato": ricavo_immediato,
                 "differenza_vrp_vs_immediata": differenza_vrp_vs_immediata,
@@ -426,7 +527,8 @@ def simula_sostenibilita(params):
 
 VRP_FIELDS = [
     "immobile_id", "nome", "data_simulazione", "data_inizio_piano",
-    "attiva", "valore_vendita", "prezzo_acquisto", "data_acquisto",
+    "attiva", "valore_vendita", "valore_vendita_immediata",
+    "prezzo_acquisto", "data_acquisto",
     "anticipo", "durata_anni", "tasso_interesse", "spese_notarili",
     "aliquota_plusvalenza", "imposta_registro", "imu_annuale",
     "costo_assicurazione", "tasso_investimento", "rata_mensile",
