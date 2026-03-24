@@ -283,7 +283,11 @@ def export_to_excel(tables, filepath):
 def export_to_excel_with_charts(filepath):
     """Export patrimonio data with embedded charts using xlsxwriter.
 
-    Includes a pie chart for allocation and a line chart for patrimonio evolution.
+    Sheets:
+        1. Patrimonio - Full data table with all asset classes, debiti, totals
+        2. Variazioni - Percentage changes between consecutive records
+        3. Allocazione - Latest allocation breakdown with pie chart
+        4. Evoluzione - Stacked area chart + totale netto line
     """
     try:
         import xlsxwriter
@@ -294,6 +298,18 @@ def export_to_excel_with_charts(filepath):
             get_patrimonio_totali,
         )
 
+        ASSET_LABELS = {
+            "immobili_esteri": "Imm. Esteri",
+            "immobile_italia": "Imm. Italia",
+            "fondo_pensione": "Fondo Pens.",
+            "etf": "ETF",
+            "bfp": "BFP",
+            "btp": "BTP",
+            "cash": "Cash",
+            "cd": "CD",
+            "tfr_netto": "TFR Netto",
+        }
+
         records = get_all_patrimonio()
         if isinstance(records, dict) and "error" in records:
             return records
@@ -303,75 +319,145 @@ def export_to_excel_with_charts(filepath):
         os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
         workbook = xlsxwriter.Workbook(filepath)
 
-        # --- Data sheet ---
+        # --- Formats ---
         bold_fmt = workbook.add_format({"bold": True, "bg_color": "#D9E1F2"})
-        data_sheet = workbook.add_worksheet("Patrimonio")
+        money_fmt = workbook.add_format({"num_format": "#,##0.00"})
+        pct_fmt = workbook.add_format({"num_format": "0.00%"})
+        pct_pos = workbook.add_format({"num_format": "0.00%", "font_color": "#008000"})
+        pct_neg = workbook.add_format({"num_format": "0.00%", "font_color": "#CC0000"})
+        bold_money = workbook.add_format({"bold": True, "num_format": "#,##0.00"})
 
-        headers = ["data"] + ASSET_FIELDS + ["debiti", "totale_netto"]
+        # =============================================
+        # SHEET 1: Patrimonio (data table)
+        # =============================================
+        ws_data = workbook.add_worksheet("Patrimonio")
+        headers = ["Data"] + [ASSET_LABELS.get(f, f) for f in ASSET_FIELDS] + ["Debiti", "Totale Netto"]
         for col, header in enumerate(headers):
-            data_sheet.write(0, col, header, bold_fmt)
+            ws_data.write(0, col, header, bold_fmt)
 
+        totali_list = []
         for row_idx, record in enumerate(records, start=1):
-            data_sheet.write(row_idx, 0, record.get("data", ""))
+            ws_data.write(row_idx, 0, record.get("data", ""))
             for col_idx, field in enumerate(ASSET_FIELDS, start=1):
-                data_sheet.write(row_idx, col_idx, float(record.get(field, 0)))
-            data_sheet.write(
-                row_idx, len(ASSET_FIELDS) + 1, float(record.get("debiti", 0))
-            )
+                ws_data.write(row_idx, col_idx, float(record.get(field, 0) or 0), money_fmt)
+            ws_data.write(row_idx, len(ASSET_FIELDS) + 1, float(record.get("debiti", 0) or 0), money_fmt)
             totali = get_patrimonio_totali(record)
             netto = totali.get("totale_netto", 0) if not isinstance(totali, dict) or "error" not in totali else 0
-            data_sheet.write(row_idx, len(ASSET_FIELDS) + 2, netto)
+            totali_list.append(netto)
+            ws_data.write(row_idx, len(ASSET_FIELDS) + 2, netto, bold_money)
 
-        # Auto-fit columns
-        for col_idx, header in enumerate(headers):
-            data_sheet.set_column(col_idx, col_idx, max(len(header) + 2, 14))
-
+        ws_data.set_column(0, 0, 12)
+        ws_data.set_column(1, len(headers) - 1, 15)
         num_rows = len(records)
 
-        # --- Pie chart: latest allocation ---
+        # =============================================
+        # SHEET 2: Variazioni %
+        # =============================================
+        ws_var = workbook.add_worksheet("Variazioni")
+        var_headers = ["Data"] + [ASSET_LABELS.get(f, f) for f in ASSET_FIELDS] + ["Totale Netto"]
+        for col, header in enumerate(var_headers):
+            ws_var.write(0, col, header, bold_fmt)
+
+        for row_idx in range(1, len(records)):
+            curr = records[row_idx]
+            prev = records[row_idx - 1]
+            ws_var.write(row_idx, 0, curr.get("data", ""))
+            for col_idx, field in enumerate(ASSET_FIELDS, start=1):
+                cv = float(curr.get(field, 0) or 0)
+                pv = float(prev.get(field, 0) or 0)
+                if pv != 0:
+                    var = (cv - pv) / abs(pv)
+                    fmt = pct_pos if var >= 0 else pct_neg
+                    ws_var.write(row_idx, col_idx, var, fmt)
+                else:
+                    ws_var.write(row_idx, col_idx, "")
+            # Totale netto variation
+            cn = totali_list[row_idx]
+            pn = totali_list[row_idx - 1]
+            if pn != 0:
+                var = (cn - pn) / abs(pn)
+                fmt = pct_pos if var >= 0 else pct_neg
+                ws_var.write(row_idx, len(ASSET_FIELDS) + 1, var, fmt)
+
+        ws_var.set_column(0, 0, 12)
+        ws_var.set_column(1, len(var_headers) - 1, 15)
+
+        # =============================================
+        # SHEET 3: Allocazione (pie chart)
+        # =============================================
         latest = records[-1]
         percentuali = get_patrimonio_percentuali(latest)
 
-        pie_sheet = workbook.add_worksheet("Allocazione")
-        pie_sheet.write(0, 0, "Asset Class", bold_fmt)
-        pie_sheet.write(0, 1, "Valore", bold_fmt)
-        pie_sheet.write(0, 2, "Percentuale %", bold_fmt)
+        ws_alloc = workbook.add_worksheet("Allocazione")
+        ws_alloc.write(0, 0, "Asset Class", bold_fmt)
+        ws_alloc.write(0, 1, "Valore", bold_fmt)
+        ws_alloc.write(0, 2, "Percentuale", bold_fmt)
 
-        for i, field in enumerate(ASSET_FIELDS, start=1):
-            pie_sheet.write(i, 0, field)
-            pie_sheet.write(i, 1, float(latest.get(field, 0)))
+        colors = ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#70AD47',
+                  '#5B9BD5', '#FF6384', '#9966FF', '#FF9F40']
+        points = []
+        for i, field in enumerate(ASSET_FIELDS):
+            ws_alloc.write(i + 1, 0, ASSET_LABELS.get(field, field))
+            ws_alloc.write(i + 1, 1, float(latest.get(field, 0) or 0), money_fmt)
             pct = percentuali.get(field, 0) if isinstance(percentuali, dict) else 0
-            pie_sheet.write(i, 2, pct)
+            ws_alloc.write(i + 1, 2, pct / 100 if pct else 0, pct_fmt)
+            if i < len(colors):
+                points.append({"fill": {"color": colors[i]}})
 
-        pie_sheet.set_column(0, 0, 20)
-        pie_sheet.set_column(1, 2, 15)
+        ws_alloc.set_column(0, 0, 18)
+        ws_alloc.set_column(1, 2, 15)
 
         pie_chart = workbook.add_chart({"type": "pie"})
         pie_chart.add_series({
             "name": "Allocazione Patrimonio",
             "categories": ["Allocazione", 1, 0, len(ASSET_FIELDS), 0],
             "values": ["Allocazione", 1, 1, len(ASSET_FIELDS), 1],
-            "data_labels": {"percentage": True, "category": True},
+            "data_labels": {"percentage": True, "position": "inside_end",
+                            "font": {"size": 10, "bold": True, "color": "white"}},
+            "points": points,
         })
         pie_chart.set_title({"name": "Allocazione Patrimonio"})
-        pie_chart.set_size({"width": 720, "height": 480})
-        pie_sheet.insert_chart("E2", pie_chart)
+        pie_chart.set_legend({"position": "bottom", "font": {"size": 10}})
+        pie_chart.set_size({"width": 720, "height": 500})
+        ws_alloc.insert_chart("E2", pie_chart)
 
-        # --- Line chart: patrimonio evolution ---
+        # =============================================
+        # SHEET 4: Evoluzione (stacked area + line)
+        # =============================================
+        ws_evo = workbook.add_worksheet("Evoluzione")
+
+        # Stacked area chart
+        area_chart = workbook.add_chart({"type": "area", "subtype": "stacked"})
+        for i, field in enumerate(ASSET_FIELDS):
+            col_idx = i + 1
+            area_chart.add_series({
+                "name": ASSET_LABELS.get(field, field),
+                "categories": ["Patrimonio", 1, 0, num_rows, 0],
+                "values": ["Patrimonio", 1, col_idx, num_rows, col_idx],
+                "fill": {"color": colors[i] if i < len(colors) else "#888888"},
+                "border": {"none": True},
+            })
+        area_chart.set_title({"name": "Evoluzione Patrimonio per Asset Class"})
+        area_chart.set_x_axis({"name": "Data"})
+        area_chart.set_y_axis({"name": "EUR", "num_format": "#,##0"})
+        area_chart.set_size({"width": 900, "height": 500})
+        area_chart.set_legend({"position": "bottom", "font": {"size": 9}})
+        ws_evo.insert_chart("A1", area_chart)
+
+        # Totale netto line chart
         line_chart = workbook.add_chart({"type": "line"})
         line_chart.add_series({
             "name": "Totale Netto",
             "categories": ["Patrimonio", 1, 0, num_rows, 0],
             "values": ["Patrimonio", 1, len(ASSET_FIELDS) + 2, num_rows, len(ASSET_FIELDS) + 2],
-            "line": {"width": 2.5},
+            "line": {"width": 2.5, "color": "#4472C4"},
+            "marker": {"type": "circle", "size": 4},
         })
-        line_chart.set_title({"name": "Evoluzione Patrimonio"})
+        line_chart.set_title({"name": "Evoluzione Totale Netto"})
         line_chart.set_x_axis({"name": "Data"})
-        line_chart.set_y_axis({"name": "Valore (EUR)"})
-        line_chart.set_size({"width": 720, "height": 480})
-
-        chart_sheet = workbook.add_worksheet("Evoluzione")
-        chart_sheet.insert_chart("A1", line_chart)
+        line_chart.set_y_axis({"name": "EUR", "num_format": "#,##0"})
+        line_chart.set_size({"width": 900, "height": 400})
+        ws_evo.insert_chart("A26", line_chart)
 
         workbook.close()
         return {"success": True, "filepath": filepath}
