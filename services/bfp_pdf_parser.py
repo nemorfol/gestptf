@@ -134,6 +134,34 @@ def _extract_tabella_b(text):
             "tasso_netto": tasso_netto,
         })
 
+    # If no results, try alternative format (Ordinario, 4x4, Indicizzato, etc.)
+    # Format: "anni mesi coeff_lordo coeff_netto" (no tasso columns)
+    # Multiple triplets per line, e.g.: "0 0 1,00000000 1,00000000 6 8 1,09432 1,08253 ..."
+    if not coefficienti:
+        alt_pattern = re.compile(
+            r"(\d{1,2})\s*(\d{1,2})\s+"
+            r"(\d+[,\.]\d{4,})\s+"
+            r"(\d+[,\.]\d{4,})"
+        )
+        for match in alt_pattern.finditer(text):
+            anni = int(match.group(1))
+            mesi = int(match.group(2))
+            coeff_lordo = _parse_italian_number(match.group(3))
+            coeff_netto = _parse_italian_number(match.group(4))
+            # Convert months to semesters (0-1)
+            semestri = 1 if mesi >= 6 else 0
+            # Skip duplicates and obviously wrong entries
+            if coeff_lordo < 0.5 or coeff_lordo > 10:
+                continue
+            coefficienti.append({
+                "anni": anni,
+                "semestri": semestri,
+                "coeff_lordo": coeff_lordo,
+                "coeff_netto": coeff_netto,
+                "tasso_lordo": 0,
+                "tasso_netto": 0,
+            })
+
     return coefficienti
 
 
