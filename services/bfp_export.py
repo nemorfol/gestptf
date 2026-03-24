@@ -117,10 +117,25 @@ def export_bfp_excel(filepath, data_nascita=None):
                     "name": "Allocazione per Tipologia",
                     "categories": ["Riepilogo", tip_start, 0, tip_end, 0],
                     "values": ["Riepilogo", tip_start, 2, tip_end, 2],
-                    "data_labels": {"percentage": True, "category": True, "separator": "\n"},
+                    "data_labels": {
+                        "percentage": True,
+                        "category": True,
+                        "separator": "\n",
+                        "position": "best_fit",
+                        "font": {"size": 9},
+                    },
+                    "points": [
+                        {"fill": {"color": "#4472C4"}},
+                        {"fill": {"color": "#ED7D31"}},
+                        {"fill": {"color": "#A5A5A5"}},
+                        {"fill": {"color": "#FFC000"}},
+                        {"fill": {"color": "#70AD47"}},
+                    ],
                 })
                 pie.set_title({"name": "Allocazione per Tipologia (Nominale)"})
-                pie.set_size({"width": 600, "height": 400})
+                pie.set_legend({"position": "bottom", "font": {"size": 9}})
+                pie.set_size({"width": 720, "height": 500})
+                pie.set_plotarea({"layout": {"x": 0.1, "y": 0.1, "width": 0.8, "height": 0.55}})
                 ws_riep.insert_chart("G2", pie)
 
         ws_riep.set_column(0, 0, 30)
