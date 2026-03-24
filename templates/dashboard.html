@@ -197,17 +197,9 @@
 <script>
 (function() {
     /* ── Plotly theme helpers ── */
-    function getPlotlyTheme() { return PM.Plotly.theme(); },
-            yaxis: { gridcolor: isDark ? '#495057' : '#e9ecef' }
-        };
-    }
+    function getPlotlyTheme() { return PM.Plotly.theme(); }
 
-    function getPlotlyLayout(title) { return PM.Plotly.layout(title); }, theme, {
-            title: { text: title, font: { size: 14 } },
-            margin: { t: 40, r: 20, b: 40, l: 70 },
-            autosize: true
-        });
-    }
+    function getPlotlyLayout(title) { return PM.Plotly.layout(title); }
 
     var plotlyConfig = { responsive: true, displayModeBar: false };
 
