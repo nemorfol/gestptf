@@ -348,6 +348,7 @@
                                 <tr>
                                     <th>Anno</th>
                                     <th class="text-end">Entrate Rate</th>
+                                    <th class="text-end">Interessi</th>
                                     <th class="text-end">Imp. Registro</th>
                                     <th class="text-end">IMU</th>
                                     <th class="text-end">Assicuraz.</th>
@@ -751,6 +752,7 @@
             cfBody.innerHTML += '<tr>' +
                 '<td>' + (c.anno === 0 ? 'Anticipo' : c.anno) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.entrate_rate) + '</td>' +
+                '<td class="text-end">' + PM.Fmt.currency(c.interessi_anno || 0) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.imposta_registro) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.imu) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.assicurazione) + '</td>' +
