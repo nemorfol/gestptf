@@ -8,6 +8,7 @@ from services.bfp_service import (
     create_bfp,
     update_bfp,
     delete_bfp,
+    delete_all_bfp,
     get_bfp_riepilogo,
     get_bfp_summary,
     import_bfp_from_excel,
@@ -85,6 +86,18 @@ def delete(id):
     """Delete a BFP record."""
     try:
         result = delete_bfp(id)
+        if "error" in result:
+            return jsonify({"success": False, "error": result["error"]}), 400
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bfp_bp.route("/delete-all", methods=["DELETE"])
+def delete_all():
+    """Delete all BFP records."""
+    try:
+        result = delete_all_bfp()
         if "error" in result:
             return jsonify({"success": False, "error": result["error"]}), 400
         return jsonify({"success": True})

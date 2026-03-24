@@ -86,6 +86,18 @@ def delete_bfp(id):
         return {"error": str(e)}
 
 
+def delete_all_bfp():
+    """Delete all BFP records."""
+    try:
+        db = get_db()
+        db.execute("DELETE FROM bfp")
+        db.commit()
+        db.close()
+        return {"success": True}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def get_bfp_riepilogo():
     """Returns BFP summary grouped by tipologia."""
     try:
