@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
 from services.bfp_service import (
@@ -15,6 +15,7 @@ from services.bfp_service import (
 )
 from services.bfp_pdf_parser import import_all_bfp_pdfs, get_coefficienti_serie
 from services.bfp_calculator import calcola_tutti_bfp, calcola_bollo, get_piano_rimborso, calcola_rendita
+from services.bfp_export import export_bfp_excel
 from config import UPLOAD_FOLDER, BASE_DIR
 
 bfp_bp = Blueprint("bfp_bp", __name__, url_prefix="/bfp")
@@ -101,6 +102,25 @@ def delete_all():
         if "error" in result:
             return jsonify({"success": False, "error": result["error"]}), 400
         return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bfp_bp.route("/esporta-excel")
+def esporta_excel():
+    """Export BFP data to Excel with charts and piano rimborso."""
+    try:
+        data_nascita = request.args.get("data_nascita")
+        filepath = os.path.join(BASE_DIR, "data", "bfp_export.xlsx")
+        result = export_bfp_excel(filepath, data_nascita=data_nascita)
+        if "error" in result:
+            return jsonify({"success": False, "error": result["error"]}), 400
+        return send_file(
+            filepath,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name="bfp_export.xlsx",
+        )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

@@ -7,6 +7,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0"><i class="bi bi-postcard me-2"></i>Buoni Fruttiferi Postali</h4>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-success" onclick="esportaBfpExcel()">
+                <i class="bi bi-file-earmark-excel me-1"></i> Esporta Excel
+            </button>
             <button class="btn btn-outline-danger" onclick="deleteAllBfp()">
                 <i class="bi bi-trash me-1"></i> Elimina Tutti
             </button>
@@ -654,6 +657,15 @@
         }).catch(function(err) {
             PM.Toast.show('Errore: ' + err.message, 'error');
         });
+    };
+
+    window.esportaBfpExcel = function() {
+        var url = '/bfp/esporta-excel';
+        var dn = localStorage.getItem('gestptf_data_nascita');
+        if (dn) {
+            url += '?data_nascita=' + encodeURIComponent(dn);
+        }
+        window.location.href = url;
     };
 
     window.deleteAllBfp = function() {
