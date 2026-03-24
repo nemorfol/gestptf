@@ -816,10 +816,10 @@
                     '<td class="text-end small fw-bold text-muted">Capitale</td>' +
                     '<td class="text-end small fw-bold text-muted">Deb. Residuo</td>' +
                     '<td></td>' +
-                    '<td></td>' +
                     '<td class="text-end small fw-bold text-muted">IRPEF</td>' +
                     '<td class="text-end small fw-bold text-muted">Addiz.</td>' +
                     '<td class="text-end small fw-bold text-muted">Flusso Netto</td>' +
+                    '<td></td>' +
                     '</tr>';
                 var subRata = 0, subInteressi = 0, subCapitale = 0;
                 var prevCalYear = null;
@@ -841,10 +841,11 @@
                         '<td class="text-end small fw-bold">' + PM.Fmt.currency(subRata) + '</td>' +
                         '<td class="text-end small fw-bold">' + PM.Fmt.currency(subInteressi) + '</td>' +
                         '<td class="text-end small fw-bold">' + PM.Fmt.currency(subCapitale) + '</td>' +
-                        '<td></td><td></td><td></td>' +
+                        '<td></td><td></td>' +
                         '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(subIrpef) + '</td>' +
                         '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(subAddiz) + '</td>' +
                         '<td class="text-end small fw-bold ' + colorValue(subFlusso) + '">' + PM.Fmt.currency(subFlusso) + '</td>' +
+                        '<td></td>' +
                         '</tr>';
                     subRata = 0; subInteressi = 0; subCapitale = 0;
                 }
