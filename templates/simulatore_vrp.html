@@ -829,26 +829,19 @@
                 var totInteressiAnno = c.interessi_anno || 0;
                 var irpefAnno = c.irpef || 0;
                 var addizAnno = c.addizionali || 0;
-                var impRegAnno = c.imposta_registro || 0;
-                var imuAnno = c.imu || 0;
-
                 function addSubtotalRow(calYear) {
                     // Proportional tax based on interest share
                     var quota = totInteressiAnno > 0 ? subInteressi / totInteressiAnno : 0;
                     var subIrpef = irpefAnno * quota;
                     var subAddiz = addizAnno * quota;
-                    var subImpReg = impRegAnno * quota;
-                    var subImu = imuAnno * quota;
-                    var subFlusso = subRata - subIrpef - subAddiz - subImpReg - subImu;
+                    var subFlusso = subRata - subIrpef - subAddiz;
                     cfBody.innerHTML += '<tr class="' + detailClass + '" style="' + detailStyle + ';border-top:2px solid var(--bs-border-color)">' +
                         '<td class="ps-4 small fw-bold"><i class="bi bi-calculator me-1"></i>Totale ' + calYear + '</td>' +
                         '<td></td>' +
                         '<td class="text-end small fw-bold">' + PM.Fmt.currency(subRata) + '</td>' +
                         '<td class="text-end small fw-bold">' + PM.Fmt.currency(subInteressi) + '</td>' +
                         '<td class="text-end small fw-bold">' + PM.Fmt.currency(subCapitale) + '</td>' +
-                        '<td></td>' +
-                        '<td class="text-end small fw-bold">' + PM.Fmt.currency(subImpReg) + '</td>' +
-                        '<td class="text-end small fw-bold">' + PM.Fmt.currency(subImu) + '</td>' +
+                        '<td></td><td></td><td></td>' +
                         '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(subIrpef) + '</td>' +
                         '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(subAddiz) + '</td>' +
                         '<td class="text-end small fw-bold ' + colorValue(subFlusso) + '">' + PM.Fmt.currency(subFlusso) + '</td>' +
