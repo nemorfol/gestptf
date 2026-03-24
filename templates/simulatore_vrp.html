@@ -877,10 +877,7 @@
                         '<td></td><td></td><td></td><td></td><td></td>' +
                         '</tr>';
                 });
-                // Final subtotal for last calendar year
-                if (startDate && prevCalYear !== null) {
-                    addSubtotalRow(prevCalYear);
-                }
+                // No final subtotal - only show at December boundaries
             }
         });
 
