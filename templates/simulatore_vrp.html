@@ -821,18 +821,41 @@
                     '<td class="text-end small fw-bold text-muted">Addiz.</td>' +
                     '<td class="text-end small fw-bold text-muted">Flusso Netto</td>' +
                     '</tr>';
-                var totRata = 0, totInteressi = 0, totCapitale = 0;
+                var subRata = 0, subInteressi = 0, subCapitale = 0;
+                var prevCalYear = null;
+                var detailClass = 'cf-detail cf-detail-' + c.anno;
+                var detailStyle = 'display:none;background:var(--bs-tertiary-bg)';
+
+                function addSubtotalRow(calYear) {
+                    cfBody.innerHTML += '<tr class="' + detailClass + '" style="' + detailStyle + ';border-top:2px solid var(--bs-border-color)">' +
+                        '<td class="ps-4 small fw-bold"><i class="bi bi-calculator me-1"></i>Totale ' + calYear + '</td>' +
+                        '<td></td>' +
+                        '<td class="text-end small fw-bold">' + PM.Fmt.currency(subRata) + '</td>' +
+                        '<td class="text-end small fw-bold">' + PM.Fmt.currency(subInteressi) + '</td>' +
+                        '<td class="text-end small fw-bold">' + PM.Fmt.currency(subCapitale) + '</td>' +
+                        '<td colspan="6"></td>' +
+                        '</tr>';
+                    subRata = 0; subInteressi = 0; subCapitale = 0;
+                }
+
                 pianoByAnno[c.anno].forEach(function(p) {
-                    totRata += p.rata;
-                    totInteressi += p.quota_interessi;
-                    totCapitale += p.quota_capitale;
                     var dataRata = '';
+                    var calYear = null;
                     if (startDate) {
                         var d = new Date(startDate);
                         d.setMonth(d.getMonth() + p.mese);
                         dataRata = mesiIt[d.getMonth() + 1] + ' ' + d.getFullYear();
+                        calYear = d.getFullYear();
+                        // Insert subtotal when calendar year changes
+                        if (prevCalYear !== null && calYear !== prevCalYear) {
+                            addSubtotalRow(prevCalYear);
+                        }
+                        prevCalYear = calYear;
                     }
-                    cfBody.innerHTML += '<tr class="cf-detail cf-detail-' + c.anno + '" style="display:none;background:var(--bs-tertiary-bg)">' +
+                    subRata += p.rata;
+                    subInteressi += p.quota_interessi;
+                    subCapitale += p.quota_capitale;
+                    cfBody.innerHTML += '<tr class="' + detailClass + '" style="' + detailStyle + '">' +
                         '<td class="ps-4 small text-muted"><i class="bi bi-arrow-return-right me-1"></i>Mese ' + p.mese + '</td>' +
                         '<td class="small text-muted">' + dataRata + '</td>' +
                         '<td class="text-end small">' + PM.Fmt.currency(p.rata) + '</td>' +
@@ -842,20 +865,10 @@
                         '<td></td><td></td><td></td><td></td><td></td>' +
                         '</tr>';
                 });
-                // Totale row
-                cfBody.innerHTML += '<tr class="cf-detail cf-detail-' + c.anno + '" style="display:none;background:var(--bs-tertiary-bg);border-top:2px solid var(--bs-border-color)">' +
-                    '<td class="ps-4 small fw-bold">Totale Anno ' + c.anno + '</td>' +
-                    '<td></td>' +
-                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(totRata) + '</td>' +
-                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(totInteressi) + '</td>' +
-                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(totCapitale) + '</td>' +
-                    '<td></td>' +
-                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(c.imposta_registro) + '</td>' +
-                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(c.imu) + '</td>' +
-                    '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(c.irpef || 0) + '</td>' +
-                    '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(c.addizionali || 0) + '</td>' +
-                    '<td class="text-end small fw-bold ' + colorValue(c.flusso_netto) + '">' + PM.Fmt.currency(c.flusso_netto) + '</td>' +
-                    '</tr>';
+                // Final subtotal for last calendar year (or full period if no date)
+                if (startDate && prevCalYear !== null) {
+                    addSubtotalRow(prevCalYear);
+                }
             }
         });
 
