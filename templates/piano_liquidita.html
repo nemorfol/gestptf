@@ -151,6 +151,10 @@
                             <input type="number" step="0.01" class="form-control" id="liqAccumuloBsf" name="accumulo_bsf" value="0">
                         </div>
                         <div class="col-md-4 mb-3">
+                            <label for="liqAccumuloBfpi" class="form-label">Accumulo BFPi</label>
+                            <input type="number" step="0.01" class="form-control" id="liqAccumuloBfpi" name="accumulo_bfpi" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="liqAccumuloAltro" class="form-label">Accumulo Altro</label>
                             <input type="number" step="0.01" class="form-control" id="liqAccumuloAltro" name="accumulo_altro" value="0">
                         </div>
@@ -270,6 +274,7 @@
         document.getElementById('liqImportoCd').value = liq.importo_cd || 0;
         document.getElementById('liqImportoBfpi').value = liq.importo_bfpi || 0;
         document.getElementById('liqAccumuloBsf').value = liq.accumulo_bsf || 0;
+        document.getElementById('liqAccumuloBfpi').value = liq.accumulo_bfpi || 0;
         document.getElementById('liqAccumuloAltro').value = liq.accumulo_altro || 0;
         document.getElementById('liqLiquiditaAccumulata').value = liq.liquidita_accumulata || 0;
         document.getElementById('liqTotaleBsf').value = liq.totale_bsf || 0;
@@ -292,6 +297,7 @@
             importo_cd: parseFloat(document.getElementById('liqImportoCd').value) || 0,
             importo_bfpi: parseFloat(document.getElementById('liqImportoBfpi').value) || 0,
             accumulo_bsf: parseFloat(document.getElementById('liqAccumuloBsf').value) || 0,
+            accumulo_bfpi: parseFloat(document.getElementById('liqAccumuloBfpi').value) || 0,
             accumulo_altro: parseFloat(document.getElementById('liqAccumuloAltro').value) || 0,
             liquidita_accumulata: parseFloat(document.getElementById('liqLiquiditaAccumulata').value) || 0,
             totale_bsf: parseFloat(document.getElementById('liqTotaleBsf').value) || 0,
