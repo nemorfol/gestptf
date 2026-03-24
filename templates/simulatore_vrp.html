@@ -807,6 +807,16 @@
 
             // Hidden detail rows
             if (hasDetail) {
+                // Sub-header row
+                cfBody.innerHTML += '<tr class="cf-detail cf-detail-' + c.anno + '" style="display:none;background:var(--bs-tertiary-bg)">' +
+                    '<td class="ps-4 small fw-bold text-muted">Mese</td>' +
+                    '<td class="small fw-bold text-muted">Data</td>' +
+                    '<td class="text-end small fw-bold text-muted">Rata</td>' +
+                    '<td class="text-end small fw-bold text-muted">Interessi</td>' +
+                    '<td class="text-end small fw-bold text-muted">Capitale</td>' +
+                    '<td class="text-end small fw-bold text-muted">Deb. Residuo</td>' +
+                    '<td class="small text-muted" colspan="5"></td>' +
+                    '</tr>';
                 pianoByAnno[c.anno].forEach(function(p) {
                     var dataRata = '';
                     if (startDate) {
@@ -814,16 +824,14 @@
                         d.setMonth(d.getMonth() + p.mese);
                         dataRata = mesiIt[d.getMonth() + 1] + ' ' + d.getFullYear();
                     }
-                    cfBody.innerHTML += '<tr class="cf-detail cf-detail-' + c.anno + ' table-light" style="display:none">' +
+                    cfBody.innerHTML += '<tr class="cf-detail cf-detail-' + c.anno + '" style="display:none;background:var(--bs-tertiary-bg)">' +
                         '<td class="ps-4 small text-muted"><i class="bi bi-arrow-return-right me-1"></i>Mese ' + p.mese + '</td>' +
                         '<td class="small text-muted">' + dataRata + '</td>' +
                         '<td class="text-end small">' + PM.Fmt.currency(p.rata) + '</td>' +
-                        '<td class="text-end small">' + PM.Fmt.currency(p.quota_interessi) + '</td>' +
-                        '<td class="text-end small text-muted" colspan="5">' +
-                            'Capitale: ' + PM.Fmt.currency(p.quota_capitale) +
-                            ' &middot; Residuo: ' + PM.Fmt.currency(p.debito_residuo) +
-                        '</td>' +
-                        '<td colspan="2"></td>' +
+                        '<td class="text-end small fw-semibold">' + PM.Fmt.currency(p.quota_interessi) + '</td>' +
+                        '<td class="text-end small text-muted">' + PM.Fmt.currency(p.quota_capitale) + '</td>' +
+                        '<td class="text-end small text-muted">' + PM.Fmt.currency(p.debito_residuo) + '</td>' +
+                        '<td class="small text-muted" colspan="5"></td>' +
                         '</tr>';
                 });
             }
