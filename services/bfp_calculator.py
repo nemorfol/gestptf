@@ -368,6 +368,70 @@ def _eta_to_string(eta):
     return f"{anni} anni"
 
 
+def calcola_valore_al_65(serie, valore_nominale, eta_sottoscrizione):
+    """Calculate the value at age 65 for BSF/BO65 using Tabella A coefficients.
+
+    Args:
+        serie: Serie code
+        valore_nominale: Nominal value
+        eta_sottoscrizione: Age at subscription (e.g. 44 or 44.5)
+
+    Returns:
+        dict with valore_lordo, valore_netto, ritenuta, or dict with error.
+    """
+    if not serie or not eta_sottoscrizione:
+        return {"error": "Serie o eta non specificata"}
+
+    valore_nominale = float(valore_nominale or 0)
+    eta_sottoscrizione = float(eta_sottoscrizione)
+    eta_str = _eta_to_string(eta_sottoscrizione)
+
+    db = get_db()
+
+    # Try exact match on eta_da
+    row = db.execute(
+        """SELECT * FROM bfp_coefficienti
+           WHERE serie = ? AND tipo_tabella = 'A' AND eta_da = ?
+           LIMIT 1""",
+        (serie, eta_str),
+    ).fetchone()
+
+    if not row:
+        # Try bracket match
+        rows = db.execute(
+            """SELECT * FROM bfp_coefficienti
+               WHERE serie = ? AND tipo_tabella = 'A'""",
+            (serie,),
+        ).fetchall()
+        for r in rows:
+            r_dict = dict(r)
+            da_num = _eta_str_to_num(r_dict["eta_da"])
+            a_num = _eta_str_to_num(r_dict["eta_a"])
+            if da_num is not None and a_num is not None:
+                if da_num <= eta_sottoscrizione < a_num:
+                    row = r
+                    break
+
+    db.close()
+
+    if not row:
+        return {"error": f"Nessun coefficiente Tabella A per serie {serie} ed eta {eta_str}"}
+
+    row = dict(row)
+    coeff_lordo = row["coeff_lordo"]
+    coeff_netto = row["coeff_netto"]
+    valore_lordo = round(valore_nominale * coeff_lordo, 2)
+    valore_netto = round(valore_nominale * coeff_netto, 2)
+
+    return {
+        "valore_lordo": valore_lordo,
+        "valore_netto": valore_netto,
+        "ritenuta": round(valore_lordo - valore_netto, 2),
+        "coeff_lordo": coeff_lordo,
+        "coeff_netto": coeff_netto,
+    }
+
+
 def calcola_rendita(serie, valore_nominale, eta_sottoscrizione):
     """Calculate monthly/annual rendita for BSF/BO65.
 

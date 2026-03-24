@@ -305,7 +305,7 @@ def _write_rendita_sheet(workbook, records, data_nascita, totale_lordo,
                          bold_fmt, money_fmt, bold_money, header_green):
     """Write the Rendita 65-80 sheet for BSF/BO65 buoni."""
     from datetime import datetime
-    from services.bfp_calculator import calcola_rendita, calcola_valore_scadenza, calcola_bollo
+    from services.bfp_calculator import calcola_rendita, calcola_valore_al_65, calcola_bollo
 
     try:
         nascita = datetime.strptime(str(data_nascita)[:10], "%Y-%m-%d").date()
@@ -344,7 +344,7 @@ def _write_rendita_sheet(workbook, records, data_nascita, totale_lordo,
         if "error" in result:
             continue
 
-        val_65 = calcola_valore_scadenza(bfp.get("serie"), valore_nom, ds)
+        val_65 = calcola_valore_al_65(bfp.get("serie"), valore_nom, eta)
         valore_al_65 = val_65.get("valore_netto", valore_nom) if "error" not in val_65 else valore_nom
 
         totale_mensile_lorda += result["rata_mensile_lorda"]

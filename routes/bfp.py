@@ -249,9 +249,9 @@ def rendita_totale():
             if "error" in result:
                 continue
 
-            # Also get value at 65 (Tabella A)
-            from services.bfp_calculator import calcola_valore_scadenza
-            val_65 = calcola_valore_scadenza(bfp.get("serie"), valore_nom, ds)
+            # Get value at 65 using Tabella A (based on age at subscription)
+            from services.bfp_calculator import calcola_valore_al_65
+            val_65 = calcola_valore_al_65(bfp.get("serie"), valore_nom, eta)
             valore_al_65_netto = val_65.get("valore_netto", valore_nom) if "error" not in val_65 else valore_nom
 
             totale_mensile_lorda += result["rata_mensile_lorda"]
