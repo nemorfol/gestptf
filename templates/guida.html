@@ -855,6 +855,20 @@
                                 </div>
                             </div>
 
+                            <!-- Elimina Tutti -->
+                            <div class="card border-danger mb-3">
+                                <div class="card-header bg-danger-subtle">
+                                    <h6 class="mb-0"><i class="bi bi-trash me-1"></i>Elimina Tutti</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Elimina tutti i BFP presenti nel database in un'unica operazione.</p>
+                                    <div class="alert alert-danger mb-0">
+                                        <i class="bi bi-exclamation-triangle me-1"></i><strong>Attenzione:</strong>
+                                        questa azione è <strong>irreversibile</strong>. Verrà chiesta una conferma prima di procedere.
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Bollo -->
                             <div class="card border-secondary mb-3">
                                 <div class="card-header bg-body-secondary">
@@ -1238,10 +1252,16 @@
 
                             <h6 class="mt-3"><i class="bi bi-bar-chart me-1"></i>Risultati</h6>
                             <ul>
-                                <li><strong>Piano rate:</strong> dettaglio di ogni rata con quota capitale, interessi e residuo</li>
+                                <li><strong>Piano ammortamento:</strong> dettaglio di ogni rata con quota capitale, interessi e debito residuo</li>
+                                <li><strong>Cash flow annuale:</strong> tabella con entrate rate, interessi, imposte (registro, IMU, IRPEF, addizionali), flusso netto e cumulato</li>
                                 <li><strong>Confronto costo opportunità:</strong> cosa avresti guadagnato investendo diversamente</li>
                                 <li><strong>Riepilogo fiscale:</strong> tasse e commissioni sulla vendita</li>
                             </ul>
+
+                            <h6 class="mt-3"><i class="bi bi-file-earmark-excel me-1"></i>Esportazione Excel</h6>
+                            <p>Entrambe le tabelle (Cash Flow Annuale e Piano Ammortamento) possono essere esportate in formato
+                               Excel (.xlsx) tramite il pulsante <button class="btn btn-outline-success btn-sm disabled" style="font-size:.75rem">
+                               <i class="bi bi-file-earmark-excel"></i> Esporta Excel</button> presente in ciascun tab.</p>
 
                             <h6 class="mt-3"><i class="bi bi-bookmark-check me-1"></i>Salva e Attiva</h6>
                             <p>Puoi <strong>salvare</strong> la simulazione e <strong>attivarla</strong>: in questo caso,
