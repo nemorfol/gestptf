@@ -254,20 +254,27 @@ def rendita_totale():
         # Calculate bollo for each buono (0.20% on valore_al_65, exempt if total < 5000)
         for b in rendita_buoni:
             b["bollo_annuo"] = calcola_bollo(b["valore_al_65_netto"], totale_valore_65)
+            b["bollo_mensile"] = round(b["bollo_annuo"] / 12, 2)
+            b["rata_mensile_netta_post_bollo"] = round(b["rata_mensile_netta"] - b["bollo_mensile"], 2)
         totale_bollo_annuo = round(sum(b["bollo_annuo"] for b in rendita_buoni), 2)
+        totale_bollo_mensile = round(totale_bollo_annuo / 12, 2)
 
         return jsonify({
             "success": True,
             "data": {
                 "totale_mensile_lorda": round(totale_mensile_lorda, 2),
                 "totale_mensile_netta": round(totale_mensile_netta, 2),
+                "totale_mensile_netta_post_bollo": round(totale_mensile_netta - totale_bollo_mensile, 2),
                 "totale_annua_lorda": round(totale_mensile_lorda * 12, 2),
                 "totale_annua_netta": round(totale_mensile_netta * 12, 2),
+                "totale_annua_netta_post_bollo": round(totale_mensile_netta * 12 - totale_bollo_annuo, 2),
                 "totale_rendita_15_anni_lorda": round(totale_mensile_lorda * 180, 2),
                 "totale_rendita_15_anni_netta": round(totale_mensile_netta * 180, 2),
+                "totale_rendita_15_anni_netta_post_bollo": round(totale_mensile_netta * 180 - totale_bollo_annuo * 15, 2),
                 "totale_nominale": round(totale_nominale_rendita, 2),
                 "totale_valore_65": round(totale_valore_65, 2),
                 "totale_bollo_annuo": totale_bollo_annuo,
+                "totale_bollo_mensile": totale_bollo_mensile,
                 "totale_bollo_15_anni": round(totale_bollo_annuo * 15, 2),
                 "num_buoni": len(rendita_buoni),
                 "dettaglio": rendita_buoni,

@@ -467,19 +467,19 @@
 
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
             html += '<p class="text-muted mb-0 small">Rata Mensile Netta</p>';
-            html += '<h4 class="mb-0 fw-bold text-success">' + fc(d.totale_mensile_netta) + '</h4>';
+            html += '<h4 class="mb-0 fw-bold text-success">' + fc(d.totale_mensile_netta_post_bollo) + '</h4>';
             html += '<small class="text-muted">Lorda: ' + fc(d.totale_mensile_lorda) + '</small>';
             html += '</div></div></div>';
 
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
             html += '<p class="text-muted mb-0 small">Rata Annua Netta</p>';
-            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(d.totale_annua_netta) + '</h5>';
+            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(d.totale_annua_netta_post_bollo) + '</h5>';
             html += '<small class="text-muted">Lorda: ' + fc(d.totale_annua_lorda) + '</small>';
             html += '</div></div></div>';
 
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
             html += '<p class="text-muted mb-0 small">Totale Rendita (15 anni)</p>';
-            html += '<h5 class="mb-0 fw-bold">' + fc(d.totale_rendita_15_anni_netta) + '</h5>';
+            html += '<h5 class="mb-0 fw-bold">' + fc(d.totale_rendita_15_anni_netta_post_bollo) + '</h5>';
             html += '<small class="text-muted">Lorda: ' + fc(d.totale_rendita_15_anni_lorda) + '</small>';
             html += '</div></div></div>';
 
@@ -512,7 +512,7 @@
                     html += '<td class="text-end"><small>' + etaLabel + '</small></td>';
                     html += '<td class="text-end"><small>' + fc(b.valore_al_65_netto) + '</small></td>';
                     html += '<td class="text-end text-warning"><small>' + (b.bollo_annuo > 0 ? fc(b.bollo_annuo) : '<i class="bi bi-check-circle-fill text-success"></i> Esente') + '</small></td>';
-                    html += '<td class="text-end text-success fw-bold"><small>' + fc(b.rata_mensile_netta) + '</small></td>';
+                    html += '<td class="text-end text-success fw-bold"><small>' + fc(b.rata_mensile_netta_post_bollo) + '</small></td>';
                     html += '<td class="text-end"><small>' + fc(b.rata_mensile_lorda) + '</small></td></tr>';
                 });
                 html += '</tbody></table></div>';
