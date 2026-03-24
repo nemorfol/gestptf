@@ -513,17 +513,21 @@
             var fc = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
 
             // BSF/BO65: valore al 65° is inflation-indexed (no deflation)
-            // BUT rendita rates (Tab C) are FIXED on nominal → must deflate
+            // Rendita rates: calculated on inflation-adjusted nominal at 65.
+            // Nominal at 65 grows by (1+infl)^anni65, so rate_nominal = rate_base × (1+infl)^anni65
+            // In real terms: rate_real = rate_nominal / (1+infl)^(anni65+midpoint)
+            //              = rate_base × (1+infl)^anni65 / (1+infl)^(anni65+7.5)
+            //              = rate_base / (1+infl)^7.5
+            // So we only deflate by the 7.5 years of rendita period (inflation to 65 cancels out)
             var useInflation = document.getElementById('chkInflazioneGlobal').checked;
             var inflRate = parseFloat(document.getElementById('txtInflazioneGlobal').value) / 100 || 0;
             var nascitaDate = new Date(dn);
             var oggi = new Date();
             var anni65 = 65 - ((oggi - nascitaDate) / (365.25 * 86400000));
             if (anni65 < 0) anni65 = 0;
-            // Deflator for rates: paid from age 65 to 80, use mid-point (65 + 7.5 years from today)
-            var deflMid = useInflation ? Math.pow(1 + inflRate, anni65 + 7.5) : 1;
-            var defl65 = useInflation ? Math.pow(1 + inflRate, anni65) : 1;
-            var dfRate = function(v) { return useInflation ? v / deflMid : v; };
+            // Deflator: only the 7.5 years mid-point of rendita (65→80), anni65 cancels out
+            var deflRendita = useInflation ? Math.pow(1 + inflRate, 7.5) : 1;
+            var dfRate = function(v) { return useInflation ? v / deflRendita : v; };
             var inflLabel = useInflation ? ' <span class="badge bg-info-subtle text-info">reale</span>' : '';
             var inflLabelIdx = useInflation ? ' <span class="badge bg-success-subtle text-success">indicizzato</span>' : '';
 
@@ -568,7 +572,7 @@
             if (useInflation) {
                 html += '<div class="alert alert-info py-1 px-2 small mb-3"><i class="bi bi-info-circle me-1"></i>';
                 html += '<strong>Valore al 65&deg;:</strong> indicizzato all\'inflazione (nessuna deflazione). ';
-                html += '<strong>Rate rendita:</strong> importo fisso &rarr; deflazionate (&divide;' + deflMid.toFixed(2) + ' al punto medio). ';
+                html += '<strong>Rate rendita:</strong> calcolate sul nominale rivalutato al 65&deg;, poi deflazionate per i 15 anni di erogazione (&divide;' + deflRendita.toFixed(2) + '). ';
                 html += 'Inflazione: ' + (inflRate * 100).toFixed(1) + '% annuo.';
                 html += '</div>';
             }
