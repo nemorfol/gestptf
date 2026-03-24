@@ -335,16 +335,22 @@ def export_to_excel_with_charts(filepath):
         for col, header in enumerate(headers):
             ws_data.write(0, col, header, bold_fmt)
 
+        # Calculate totali for all records (ASC order for charts)
         totali_list = []
-        for row_idx, record in enumerate(records, start=1):
+        for record in records:
+            totali = get_patrimonio_totali(record)
+            netto = totali.get("totale_netto", 0) if not isinstance(totali, dict) or "error" not in totali else 0
+            totali_list.append(netto)
+
+        # Write data sheet in DESC order (most recent first)
+        records_desc = list(reversed(records))
+        totali_desc = list(reversed(totali_list))
+        for row_idx, record in enumerate(records_desc, start=1):
             ws_data.write(row_idx, 0, record.get("data", ""))
             for col_idx, field in enumerate(ASSET_FIELDS, start=1):
                 ws_data.write(row_idx, col_idx, float(record.get(field, 0) or 0), money_fmt)
             ws_data.write(row_idx, len(ASSET_FIELDS) + 1, float(record.get("debiti", 0) or 0), money_fmt)
-            totali = get_patrimonio_totali(record)
-            netto = totali.get("totale_netto", 0) if not isinstance(totali, dict) or "error" not in totali else 0
-            totali_list.append(netto)
-            ws_data.write(row_idx, len(ASSET_FIELDS) + 2, netto, bold_money)
+            ws_data.write(row_idx, len(ASSET_FIELDS) + 2, totali_desc[row_idx - 1], bold_money)
 
         ws_data.set_column(0, 0, 12)
         ws_data.set_column(1, len(headers) - 1, 15)
@@ -358,26 +364,29 @@ def export_to_excel_with_charts(filepath):
         for col, header in enumerate(var_headers):
             ws_var.write(0, col, header, bold_fmt)
 
-        for row_idx in range(1, len(records)):
-            curr = records[row_idx]
-            prev = records[row_idx - 1]
-            ws_var.write(row_idx, 0, curr.get("data", ""))
+        # Write variations in DESC order (most recent first)
+        var_row = 0
+        for i in range(len(records) - 1, 0, -1):
+            curr = records[i]
+            prev = records[i - 1]
+            var_row += 1
+            ws_var.write(var_row, 0, curr.get("data", ""))
             for col_idx, field in enumerate(ASSET_FIELDS, start=1):
                 cv = float(curr.get(field, 0) or 0)
                 pv = float(prev.get(field, 0) or 0)
                 if pv != 0:
                     var = (cv - pv) / abs(pv)
                     fmt = pct_pos if var >= 0 else pct_neg
-                    ws_var.write(row_idx, col_idx, var, fmt)
+                    ws_var.write(var_row, col_idx, var, fmt)
                 else:
-                    ws_var.write(row_idx, col_idx, "")
+                    ws_var.write(var_row, col_idx, "")
             # Totale netto variation
-            cn = totali_list[row_idx]
-            pn = totali_list[row_idx - 1]
+            cn = totali_list[i]
+            pn = totali_list[i - 1]
             if pn != 0:
                 var = (cn - pn) / abs(pn)
                 fmt = pct_pos if var >= 0 else pct_neg
-                ws_var.write(row_idx, len(ASSET_FIELDS) + 1, var, fmt)
+                ws_var.write(var_row, len(ASSET_FIELDS) + 1, var, fmt)
 
         ws_var.set_column(0, 0, 12)
         ws_var.set_column(1, len(var_headers) - 1, 15)
@@ -422,18 +431,33 @@ def export_to_excel_with_charts(filepath):
         ws_alloc.insert_chart("E2", pie_chart)
 
         # =============================================
+        # Hidden data sheet for charts (ASC order)
+        # =============================================
+        ws_chart_data = workbook.add_worksheet("_ChartData")
+        ws_chart_data.hide()
+        chart_headers = ["Data"] + [ASSET_LABELS.get(f, f) for f in ASSET_FIELDS] + ["Debiti", "Totale Netto"]
+        for col, header in enumerate(chart_headers):
+            ws_chart_data.write(0, col, header)
+        for row_idx, record in enumerate(records, start=1):
+            ws_chart_data.write(row_idx, 0, record.get("data", ""))
+            for col_idx, field in enumerate(ASSET_FIELDS, start=1):
+                ws_chart_data.write(row_idx, col_idx, float(record.get(field, 0) or 0))
+            ws_chart_data.write(row_idx, len(ASSET_FIELDS) + 1, float(record.get("debiti", 0) or 0))
+            ws_chart_data.write(row_idx, len(ASSET_FIELDS) + 2, totali_list[row_idx - 1])
+
+        # =============================================
         # SHEET 4: Evoluzione (stacked area + line)
         # =============================================
         ws_evo = workbook.add_worksheet("Evoluzione")
 
-        # Stacked area chart
+        # Stacked area chart (uses hidden _ChartData in ASC order)
         area_chart = workbook.add_chart({"type": "area", "subtype": "stacked"})
         for i, field in enumerate(ASSET_FIELDS):
             col_idx = i + 1
             area_chart.add_series({
                 "name": ASSET_LABELS.get(field, field),
-                "categories": ["Patrimonio", 1, 0, num_rows, 0],
-                "values": ["Patrimonio", 1, col_idx, num_rows, col_idx],
+                "categories": ["_ChartData", 1, 0, num_rows, 0],
+                "values": ["_ChartData", 1, col_idx, num_rows, col_idx],
                 "fill": {"color": colors[i] if i < len(colors) else "#888888"},
                 "border": {"none": True},
             })
@@ -448,8 +472,8 @@ def export_to_excel_with_charts(filepath):
         line_chart = workbook.add_chart({"type": "line"})
         line_chart.add_series({
             "name": "Totale Netto",
-            "categories": ["Patrimonio", 1, 0, num_rows, 0],
-            "values": ["Patrimonio", 1, len(ASSET_FIELDS) + 2, num_rows, len(ASSET_FIELDS) + 2],
+            "categories": ["_ChartData", 1, 0, num_rows, 0],
+            "values": ["_ChartData", 1, len(ASSET_FIELDS) + 2, num_rows, len(ASSET_FIELDS) + 2],
             "line": {"width": 2.5, "color": "#4472C4"},
             "marker": {"type": "circle", "size": 4},
         })
