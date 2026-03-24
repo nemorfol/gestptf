@@ -815,9 +815,17 @@
                     '<td class="text-end small fw-bold text-muted">Interessi</td>' +
                     '<td class="text-end small fw-bold text-muted">Capitale</td>' +
                     '<td class="text-end small fw-bold text-muted">Deb. Residuo</td>' +
-                    '<td class="small text-muted" colspan="5"></td>' +
+                    '<td class="text-end small fw-bold text-muted">Imp. Reg.</td>' +
+                    '<td class="text-end small fw-bold text-muted">IMU</td>' +
+                    '<td class="text-end small fw-bold text-muted">IRPEF</td>' +
+                    '<td class="text-end small fw-bold text-muted">Addiz.</td>' +
+                    '<td class="text-end small fw-bold text-muted">Flusso Netto</td>' +
                     '</tr>';
+                var totRata = 0, totInteressi = 0, totCapitale = 0;
                 pianoByAnno[c.anno].forEach(function(p) {
+                    totRata += p.rata;
+                    totInteressi += p.quota_interessi;
+                    totCapitale += p.quota_capitale;
                     var dataRata = '';
                     if (startDate) {
                         var d = new Date(startDate);
@@ -831,9 +839,23 @@
                         '<td class="text-end small fw-semibold">' + PM.Fmt.currency(p.quota_interessi) + '</td>' +
                         '<td class="text-end small text-muted">' + PM.Fmt.currency(p.quota_capitale) + '</td>' +
                         '<td class="text-end small text-muted">' + PM.Fmt.currency(p.debito_residuo) + '</td>' +
-                        '<td class="small text-muted" colspan="5"></td>' +
+                        '<td></td><td></td><td></td><td></td><td></td>' +
                         '</tr>';
                 });
+                // Totale row
+                cfBody.innerHTML += '<tr class="cf-detail cf-detail-' + c.anno + '" style="display:none;background:var(--bs-tertiary-bg);border-top:2px solid var(--bs-border-color)">' +
+                    '<td class="ps-4 small fw-bold">Totale Anno ' + c.anno + '</td>' +
+                    '<td></td>' +
+                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(totRata) + '</td>' +
+                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(totInteressi) + '</td>' +
+                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(totCapitale) + '</td>' +
+                    '<td></td>' +
+                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(c.imposta_registro) + '</td>' +
+                    '<td class="text-end small fw-bold">' + PM.Fmt.currency(c.imu) + '</td>' +
+                    '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(c.irpef || 0) + '</td>' +
+                    '<td class="text-end small fw-bold text-danger">' + PM.Fmt.currency(c.addizionali || 0) + '</td>' +
+                    '<td class="text-end small fw-bold ' + colorValue(c.flusso_netto) + '">' + PM.Fmt.currency(c.flusso_netto) + '</td>' +
+                    '</tr>';
             }
         });
 
