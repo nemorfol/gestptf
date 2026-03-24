@@ -617,6 +617,14 @@
     // --- Global inflation deflator for BFP table ---
     var fmtCur = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
 
+    function parseScadenza(s) {
+        // Parse DD.MM.YYYY or YYYY-MM-DD
+        if (!s) return null;
+        var parts = s.split('.');
+        if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+        return new Date(s);
+    }
+
     function applyInflationToTable() {
         var useInfl = document.getElementById('chkInflazioneGlobal').checked;
         var rate = parseFloat(document.getElementById('txtInflazioneGlobal').value) / 100 || 0;
@@ -631,7 +639,7 @@
             var row = cell.closest('tr');
             var indexed = row && row.dataset.indexed === '1';
             if (useInfl && scad && !indexed) {
-                var scadDate = new Date(scad);
+                var scadDate = parseScadenza(scad);
                 var anniAllaScad = (scadDate - oggi) / (365.25 * 86400000);
                 if (anniAllaScad < 0) anniAllaScad = 0;
                 var deflator = Math.pow(1 + rate, anniAllaScad);
@@ -653,7 +661,7 @@
                     if (cells.length > 0) {
                         var v = parseFloat(cells[cells.length - 1].dataset.value) || 0;
                         if (!indexed && scad) {
-                            var anniScad = (new Date(scad) - oggi) / (365.25 * 86400000);
+                            var anniScad = (parseScadenza(scad) - oggi) / (365.25 * 86400000);
                             if (anniScad < 0) anniScad = 0;
                             totReal += v / Math.pow(1 + rate, anniScad);
                         } else {
