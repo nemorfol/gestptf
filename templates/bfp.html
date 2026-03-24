@@ -74,6 +74,15 @@
         </div>
     </div>
 
+    <!-- Grafico Allocazione per Tipologia -->
+    {% if riepilogo and riepilogo|length > 0 %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div id="chartBfpAllocazione" style="height:350px"></div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Riepilogo Rendita Totale (BSF + BO65) -->
     <div class="card shadow-sm border-0 mb-4 border-start border-info border-3" id="renditaTotaleCard">
         <div class="card-header bg-transparent border-0 fw-semibold d-flex justify-content-between align-items-center">
@@ -433,6 +442,29 @@
 {% block extra_js %}
 <script>
 (function() {
+    // --- Pie chart: Allocazione per Tipologia ---
+    {% if riepilogo and riepilogo|length > 0 %}
+    (function() {
+        var labels = [{% for r in riepilogo %}'{{ r.tipologia }}'{{ ',' if not loop.last }}{% endfor %}];
+        var values = [{% for r in riepilogo %}{{ r.totale_nominale }}{{ ',' if not loop.last }}{% endfor %}];
+        var trace = {
+            labels: labels,
+            values: values,
+            type: 'pie',
+            textinfo: 'percent',
+            textposition: 'inside',
+            textfont: { size: 13, color: '#fff' },
+            hovertemplate: '%{label}<br>%{value:,.2f} €<br>%{percent}<extra></extra>',
+            marker: { colors: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#70AD47', '#5B9BD5', '#FF6384'] }
+        };
+        var layout = PM.Plotly.layout('Allocazione per Tipologia (Nominale)');
+        layout.showlegend = true;
+        layout.legend = { orientation: 'h', y: -0.1, font: { size: 11 } };
+        layout.margin = { t: 40, b: 40, l: 20, r: 20 };
+        Plotly.newPlot('chartBfpAllocazione', [trace], layout, { responsive: true, displayModeBar: false });
+    })();
+    {% endif %}
+
     var table = PM.DT.init('#bfpTable', {
         order: [[2, 'desc']],
         scrollX: true,
