@@ -352,6 +352,7 @@
                             <thead>
                                 <tr>
                                     <th>Anno</th>
+                                    <th>Periodo</th>
                                     <th class="text-end">Entrate Rate</th>
                                     <th class="text-end">Interessi</th>
                                     <th class="text-end">Imp. Registro</th>
@@ -380,6 +381,7 @@
                                 <tr>
                                     <th>Mese</th>
                                     <th>Anno</th>
+                                    <th>Data</th>
                                     <th class="text-end">Rata</th>
                                     <th class="text-end">Quota Capitale</th>
                                     <th class="text-end">Quota Interessi</th>
@@ -762,10 +764,22 @@
         // --- Table: Cash Flow ---
         var cfBody = document.getElementById('vrpCashflowBody');
         cfBody.innerHTML = '';
+        var dataVendita = document.getElementById('vrpDataInizio').value;
+        var startDate = dataVendita ? new Date(dataVendita) : null;
         cashflow.forEach(function(c) {
+            var periodo = '';
+            if (startDate && c.anno > 0) {
+                var yStart = startDate.getFullYear() + c.anno - 1;
+                var yEnd = startDate.getFullYear() + c.anno;
+                var mStart = startDate.getMonth() + 1;
+                periodo = (mStart > 1) ? mStart.toString().padStart(2,'0') + '/' + yStart + ' - ' + mStart.toString().padStart(2,'0') + '/' + yEnd : String(yStart);
+            } else if (startDate && c.anno === 0) {
+                periodo = startDate.toLocaleDateString('it-IT');
+            }
             var spese = c.spese_notarili + c.imposta_plusvalenza + c.imposta_registro + c.imu + c.assicurazione;
             cfBody.innerHTML += '<tr>' +
                 '<td>' + (c.anno === 0 ? 'Anticipo' : c.anno) + '</td>' +
+                '<td class="small text-muted">' + periodo + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.entrate_rate) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.interessi_anno || 0) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.imposta_registro) + '</td>' +
@@ -784,10 +798,18 @@
         // --- Table: Piano Ammortamento ---
         var amBody = document.getElementById('vrpAmmortamentoBody');
         amBody.innerHTML = '';
+        var mesiIt = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
         piano.forEach(function(p) {
+            var dataRata = '';
+            if (startDate) {
+                var d = new Date(startDate);
+                d.setMonth(d.getMonth() + p.mese);
+                dataRata = mesiIt[d.getMonth() + 1] + ' ' + d.getFullYear();
+            }
             amBody.innerHTML += '<tr>' +
                 '<td>' + p.mese + '</td>' +
                 '<td>' + p.anno + '</td>' +
+                '<td class="small text-muted">' + dataRata + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(p.rata) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(p.quota_capitale) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(p.quota_interessi) + '</td>' +
@@ -804,19 +826,30 @@
 
     // --- Excel Export ---
     window.exportCashflowExcel = function() {
+        var dv = document.getElementById('vrpDataInizio').value;
+        var sd = dv ? new Date(dv) : null;
         var data = lastCashflow.map(function(c) {
-            return {
-                'Anno': c.anno === 0 ? 'Anticipo' : c.anno,
-                'Entrate Rate': c.entrate_rate,
-                'Interessi': c.interessi_anno || 0,
-                'Imp. Registro': c.imposta_registro,
-                'IMU': c.imu,
-                'Assicurazione': c.assicurazione,
-                'IRPEF': c.irpef || 0,
-                'Addizionali': c.addizionali || 0,
-                'Flusso Netto': c.flusso_netto,
-                'Flusso Cumulato': c.flusso_cumulato
-            };
+            var periodo = '';
+            if (sd && c.anno > 0) {
+                var yS = sd.getFullYear() + c.anno - 1;
+                var yE = sd.getFullYear() + c.anno;
+                var mS = sd.getMonth() + 1;
+                periodo = (mS > 1) ? mS.toString().padStart(2,'0') + '/' + yS + ' - ' + mS.toString().padStart(2,'0') + '/' + yE : String(yS);
+            } else if (sd && c.anno === 0) {
+                periodo = sd.toLocaleDateString('it-IT');
+            }
+            var row = { 'Anno': c.anno === 0 ? 'Anticipo' : c.anno };
+            if (sd) row['Periodo'] = periodo;
+            row['Entrate Rate'] = c.entrate_rate;
+            row['Interessi'] = c.interessi_anno || 0;
+            row['Imp. Registro'] = c.imposta_registro;
+            row['IMU'] = c.imu;
+            row['Assicurazione'] = c.assicurazione;
+            row['IRPEF'] = c.irpef || 0;
+            row['Addizionali'] = c.addizionali || 0;
+            row['Flusso Netto'] = c.flusso_netto;
+            row['Flusso Cumulato'] = c.flusso_cumulato;
+            return row;
         });
         var ws = XLSX.utils.json_to_sheet(data);
         var wb = XLSX.utils.book_new();
@@ -825,15 +858,23 @@
     };
 
     window.exportAmmortamentoExcel = function() {
+        var dv = document.getElementById('vrpDataInizio').value;
+        var sd = dv ? new Date(dv) : null;
+        var mesiIt = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
         var data = lastPiano.map(function(p) {
-            return {
-                'Mese': p.mese,
-                'Anno': p.anno,
-                'Rata': p.rata,
-                'Quota Capitale': p.quota_capitale,
-                'Quota Interessi': p.quota_interessi,
-                'Debito Residuo': p.debito_residuo
-            };
+            var dataRata = '';
+            if (sd) {
+                var d = new Date(sd);
+                d.setMonth(d.getMonth() + p.mese);
+                dataRata = mesiIt[d.getMonth() + 1] + ' ' + d.getFullYear();
+            }
+            var row = { 'Mese': p.mese, 'Anno': p.anno };
+            if (sd) row['Data'] = dataRata;
+            row['Rata'] = p.rata;
+            row['Quota Capitale'] = p.quota_capitale;
+            row['Quota Interessi'] = p.quota_interessi;
+            row['Debito Residuo'] = p.debito_residuo;
+            return row;
         });
         var ws = XLSX.utils.json_to_sheet(data);
         var wb = XLSX.utils.book_new();
