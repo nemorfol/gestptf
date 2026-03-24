@@ -342,6 +342,11 @@
             <div class="card-body tab-content">
                 <!-- Cash Flow Tab -->
                 <div class="tab-pane fade show active" id="paneCashflow" role="tabpanel">
+                    <div class="mb-2 text-end">
+                        <button class="btn btn-sm btn-outline-success" onclick="exportCashflowExcel()">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
+                        </button>
+                    </div>
                     <div class="table-responsive">
                         <table id="vrpCashflowTable" class="table table-striped table-hover align-middle" style="width:100%">
                             <thead>
@@ -364,6 +369,11 @@
                 </div>
                 <!-- Ammortamento Tab -->
                 <div class="tab-pane fade" id="paneAmmortamento" role="tabpanel">
+                    <div class="mb-2 text-end">
+                        <button class="btn btn-sm btn-outline-success" onclick="exportAmmortamentoExcel()">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
+                        </button>
+                    </div>
                     <div class="table-responsive">
                         <table id="vrpAmmortamentoTable" class="table table-striped table-hover align-middle" style="width:100%">
                             <thead>
@@ -387,6 +397,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
 (function() {
     function getPlotlyTheme() { return PM.Plotly.theme(); }
@@ -395,6 +406,8 @@
     var plotlyConfig = { responsive: true, displayModeBar: false };
     var dtCashflow = null;
     var dtAmmortamento = null;
+    var lastCashflow = [];
+    var lastPiano = [];
 
     // --- Load regioni and comuni for addizionali ---
     fetch('/impostazioni/addizionali/regioni')
@@ -608,6 +621,8 @@
         var r = response.data.riepilogo;
         var piano = response.data.piano_ammortamento;
         var cashflow = response.data.cash_flow_annuale;
+        lastCashflow = cashflow;
+        lastPiano = piano;
         var confronto = response.data.confronto;
 
         // Summary cards
@@ -786,6 +801,45 @@
         // Scroll to results
         document.getElementById('vrpResults').scrollIntoView({ behavior: 'smooth' });
     }
+
+    // --- Excel Export ---
+    window.exportCashflowExcel = function() {
+        var data = lastCashflow.map(function(c) {
+            return {
+                'Anno': c.anno === 0 ? 'Anticipo' : c.anno,
+                'Entrate Rate': c.entrate_rate,
+                'Interessi': c.interessi_anno || 0,
+                'Imp. Registro': c.imposta_registro,
+                'IMU': c.imu,
+                'Assicurazione': c.assicurazione,
+                'IRPEF': c.irpef || 0,
+                'Addizionali': c.addizionali || 0,
+                'Flusso Netto': c.flusso_netto,
+                'Flusso Cumulato': c.flusso_cumulato
+            };
+        });
+        var ws = XLSX.utils.json_to_sheet(data);
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Cash Flow Annuale');
+        XLSX.writeFile(wb, 'vrp_cashflow.xlsx');
+    };
+
+    window.exportAmmortamentoExcel = function() {
+        var data = lastPiano.map(function(p) {
+            return {
+                'Mese': p.mese,
+                'Anno': p.anno,
+                'Rata': p.rata,
+                'Quota Capitale': p.quota_capitale,
+                'Quota Interessi': p.quota_interessi,
+                'Debito Residuo': p.debito_residuo
+            };
+        });
+        var ws = XLSX.utils.json_to_sheet(data);
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Piano Ammortamento');
+        XLSX.writeFile(wb, 'vrp_piano_ammortamento.xlsx');
+    };
 
     // Theme toggle
     var themeBtn = document.getElementById('themeToggle');
