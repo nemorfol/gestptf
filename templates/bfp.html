@@ -144,7 +144,7 @@
                     </thead>
                     <tbody>
                         {% for bfp in records %}
-                        <tr data-id="{{ bfp.id }}" data-scadenza="{{ bfp.scadenza or '' }}">
+                        <tr data-id="{{ bfp.id }}" data-scadenza="{{ bfp.scadenza or '' }}" data-indexed="{{ '1' if bfp.tipologia in ['BUONO INDICIZZATO INFLAZIONE ITALIANA', 'BUONO OBIETTIVO 65', 'BUONO SOLUZIONE FUTURO'] else '0' }}">
                             <td>{{ bfp.tipologia }}</td>
                             <td>{{ bfp.serie }}</td>
                             <td>{{ bfp.data_sottoscrizione|date }}</td>
@@ -512,52 +512,51 @@
             var d = res.data;
             var fc = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
 
-            // Inflation deflator
+            // BSF/BO65: valore al 65° is inflation-indexed (no deflation)
+            // BUT rendita rates (Tab C) are FIXED on nominal → must deflate
             var useInflation = document.getElementById('chkInflazioneGlobal').checked;
             var inflRate = parseFloat(document.getElementById('txtInflazioneGlobal').value) / 100 || 0;
-            // Years from today to age 65
             var nascitaDate = new Date(dn);
             var oggi = new Date();
             var anni65 = 65 - ((oggi - nascitaDate) / (365.25 * 86400000));
             if (anni65 < 0) anni65 = 0;
-            // Deflator at age 65
-            var defl65 = useInflation ? Math.pow(1 + inflRate, anni65) : 1;
-            // Average deflator for 15-year rendita (mid-point = 65 + 7.5 years from today)
+            // Deflator for rates: paid from age 65 to 80, use mid-point (65 + 7.5 years from today)
             var deflMid = useInflation ? Math.pow(1 + inflRate, anni65 + 7.5) : 1;
-            // Deflate function
-            var df = function(v, deflator) { return useInflation ? v / deflator : v; };
+            var defl65 = useInflation ? Math.pow(1 + inflRate, anni65) : 1;
+            var dfRate = function(v) { return useInflation ? v / deflMid : v; };
             var inflLabel = useInflation ? ' <span class="badge bg-info-subtle text-info">reale</span>' : '';
+            var inflLabelIdx = useInflation ? ' <span class="badge bg-success-subtle text-success">indicizzato</span>' : '';
 
             var html = '<div class="row g-3 mb-3 row-cols-2 row-cols-lg-5">';
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
-            html += '<p class="text-muted mb-0 small">Valore al 65&deg; anno' + inflLabel + '</p>';
-            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(df(d.totale_valore_65, defl65)) + '</h5>';
+            html += '<p class="text-muted mb-0 small">Valore al 65&deg; anno' + inflLabelIdx + '</p>';
+            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(d.totale_valore_65) + '</h5>';
             html += '<small class="text-muted">Nominale: ' + fc(d.totale_nominale) + '</small>';
             html += '</div></div></div>';
 
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
             html += '<p class="text-muted mb-0 small">Rata Mensile Netta' + inflLabel + '</p>';
-            html += '<h4 class="mb-0 fw-bold text-success">' + fc(df(d.totale_mensile_netta, deflMid)) + '</h4>';
-            html += '<small class="text-muted">Post bollo: ' + fc(df(d.totale_mensile_netta_post_bollo, deflMid)) + '</small>';
+            html += '<h4 class="mb-0 fw-bold text-success">' + fc(dfRate(d.totale_mensile_netta)) + '</h4>';
+            html += '<small class="text-muted">Post bollo: ' + fc(dfRate(d.totale_mensile_netta_post_bollo)) + '</small>';
             html += '</div></div></div>';
 
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
             html += '<p class="text-muted mb-0 small">Rata Annua Netta' + inflLabel + '</p>';
-            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(df(d.totale_annua_netta, deflMid)) + '</h5>';
-            html += '<small class="text-muted">Post bollo: ' + fc(df(d.totale_annua_netta_post_bollo, deflMid)) + '</small>';
+            html += '<h5 class="mb-0 fw-bold text-primary">' + fc(dfRate(d.totale_annua_netta)) + '</h5>';
+            html += '<small class="text-muted">Post bollo: ' + fc(dfRate(d.totale_annua_netta_post_bollo)) + '</small>';
             html += '</div></div></div>';
 
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
             html += '<p class="text-muted mb-0 small">Totale Rendita (15 anni)' + inflLabel + '</p>';
-            html += '<h5 class="mb-0 fw-bold">' + fc(df(d.totale_rendita_15_anni_netta, deflMid)) + '</h5>';
-            html += '<small class="text-muted">Post bollo: ' + fc(df(d.totale_rendita_15_anni_netta_post_bollo, deflMid)) + '</small>';
+            html += '<h5 class="mb-0 fw-bold">' + fc(dfRate(d.totale_rendita_15_anni_netta)) + '</h5>';
+            html += '<small class="text-muted">Post bollo: ' + fc(dfRate(d.totale_rendita_15_anni_netta_post_bollo)) + '</small>';
             html += '</div></div></div>';
 
             html += '<div class="col"><div class="card border-0 bg-body-secondary"><div class="card-body py-2 text-center">';
-            html += '<p class="text-muted mb-0 small">Bollo Annuo Totale' + inflLabel + '</p>';
+            html += '<p class="text-muted mb-0 small">Bollo Annuo Totale</p>';
             if (d.totale_bollo_annuo > 0) {
-                html += '<h5 class="mb-0 fw-bold text-warning">' + fc(df(d.totale_bollo_annuo, defl65)) + '</h5>';
-                html += '<small class="text-muted">In 15 anni: ' + fc(df(d.totale_bollo_15_anni, deflMid)) + '</small>';
+                html += '<h5 class="mb-0 fw-bold text-warning">' + fc(d.totale_bollo_annuo) + '</h5>';
+                html += '<small class="text-muted">In 15 anni: ' + fc(d.totale_bollo_15_anni) + '</small>';
             } else {
                 html += '<h5 class="mb-0 fw-bold text-success"><i class="bi bi-check-circle-fill me-1"></i>Esente</h5>';
                 html += '<small class="text-muted">Totale BFP &lt; 5.000 &euro;</small>';
@@ -568,8 +567,9 @@
 
             if (useInflation) {
                 html += '<div class="alert alert-info py-1 px-2 small mb-3"><i class="bi bi-info-circle me-1"></i>';
-                html += 'Valori in EUR di oggi con inflazione media ' + (inflRate * 100).toFixed(1) + '% annuo. ';
-                html += 'Deflatore al 65&deg;: &divide;' + defl65.toFixed(2) + ' | medio rendita: &divide;' + deflMid.toFixed(2);
+                html += '<strong>Valore al 65&deg;:</strong> indicizzato all\'inflazione (nessuna deflazione). ';
+                html += '<strong>Rate rendita:</strong> importo fisso &rarr; deflazionate (&divide;' + deflMid.toFixed(2) + ' al punto medio). ';
+                html += 'Inflazione: ' + (inflRate * 100).toFixed(1) + '% annuo.';
                 html += '</div>';
             }
 
@@ -577,31 +577,20 @@
             if (d.dettaglio && d.dettaglio.length > 0) {
                 html += '<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0">';
                 html += '<thead><tr><th>Tipologia</th><th>Data Sottoscr.</th><th class="text-end">Nominale</th>';
-                html += '<th class="text-end">Et&agrave; Sottoscr.</th><th class="text-end">Val. al 65&deg;' + inflLabel + '</th>';
+                html += '<th class="text-end">Et&agrave; Sottoscr.</th><th class="text-end">Val. al 65&deg;' + inflLabelIdx + '</th>';
                 html += '<th class="text-end">Bollo Annuo</th>';
                 html += '<th class="text-end">Rata Mens. Netta' + inflLabel + '</th><th class="text-end">Netta Post Bollo' + inflLabel + '</th><th class="text-end">Rata Mens. Lorda</th></tr></thead><tbody>';
                 d.dettaglio.forEach(function(b) {
-                    // Per-BFP deflator: years from subscription to age 65
-                    var bEta = b.eta_sottoscrizione;
-                    var bAnni65 = 65 - bEta;
-                    if (bAnni65 < 0) bAnni65 = 0;
-                    // Years from today to when this BFP reaches 65
-                    var bDataSott = new Date(b.data_sottoscrizione);
-                    var anniDaOggi65 = ((bDataSott.getTime() + bAnni65 * 365.25 * 86400000) - oggi.getTime()) / (365.25 * 86400000);
-                    if (anniDaOggi65 < 0) anniDaOggi65 = 0;
-                    var bDefl65 = useInflation ? Math.pow(1 + inflRate, anniDaOggi65) : 1;
-                    var bDeflMid = useInflation ? Math.pow(1 + inflRate, anniDaOggi65 + 7.5) : 1;
-
                     var etaLabel = Math.floor(b.eta_sottoscrizione) + 'a';
                     if (b.eta_sottoscrizione % 1 >= 0.5) etaLabel += ' 6m';
                     html += '<tr><td><small>' + b.tipologia + '</small></td>';
                     html += '<td><small>' + b.data_sottoscrizione.substring(0,10) + '</small></td>';
                     html += '<td class="text-end"><small>' + fc(b.valore_nominale) + '</small></td>';
                     html += '<td class="text-end"><small>' + etaLabel + '</small></td>';
-                    html += '<td class="text-end"><small>' + fc(df(b.valore_al_65_netto, bDefl65)) + '</small></td>';
+                    html += '<td class="text-end"><small>' + fc(b.valore_al_65_netto) + '</small></td>';
                     html += '<td class="text-end text-warning"><small>' + (b.bollo_annuo > 0 ? fc(b.bollo_annuo) : '<i class="bi bi-check-circle-fill text-success"></i> Esente') + '</small></td>';
-                    html += '<td class="text-end text-success"><small>' + fc(df(b.rata_mensile_netta, bDeflMid)) + '</small></td>';
-                    html += '<td class="text-end text-success fw-bold"><small>' + fc(df(b.rata_mensile_netta_post_bollo, bDeflMid)) + '</small></td>';
+                    html += '<td class="text-end text-success"><small>' + fc(dfRate(b.rata_mensile_netta)) + '</small></td>';
+                    html += '<td class="text-end text-success fw-bold"><small>' + fc(dfRate(b.rata_mensile_netta_post_bollo)) + '</small></td>';
                     html += '<td class="text-end"><small>' + fc(b.rata_mensile_lorda) + '</small></td></tr>';
                 });
                 html += '</tbody></table></div>';
@@ -624,51 +613,56 @@
         var oggi = new Date();
 
         // Deflate cells in main BFP table
+        // Indexed BFPs (BFPI, BSF, BO65): value grows with inflation → real value ≈ nominal value (no deflation)
+        // Non-indexed BFPs (Ordinario, 4x4): full deflation
         document.querySelectorAll('.defl-cell').forEach(function(cell) {
             var val = parseFloat(cell.dataset.value) || 0;
             var scad = cell.dataset.scadenza;
-            if (useInfl && scad) {
+            var row = cell.closest('tr');
+            var indexed = row && row.dataset.indexed === '1';
+            if (useInfl && scad && !indexed) {
                 var scadDate = new Date(scad);
                 var anniAllaScad = (scadDate - oggi) / (365.25 * 86400000);
                 if (anniAllaScad < 0) anniAllaScad = 0;
                 var deflator = Math.pow(1 + rate, anniAllaScad);
-                cell.textContent = fmtCur(val / deflator).replace('€', '€');
+                cell.textContent = fmtCur(val / deflator);
             } else {
-                cell.textContent = fmtCur(val).replace('€', '€');
+                cell.textContent = fmtCur(val);
             }
         });
 
-        // Deflate summary "Valore Netto a Scadenza" (weighted average ~midpoint)
+        // Deflate summary "Valore Netto a Scadenza"
         var summaryEl = document.getElementById('summaryNettoScadenza');
         if (summaryEl) {
-            var totVal = parseFloat(summaryEl.dataset.value) || 0;
             if (useInfl) {
-                // Calculate weighted average years to maturity
-                var totalNom = 0, weightedYears = 0;
+                var totReal = 0;
                 document.querySelectorAll('#bfpTable tbody tr').forEach(function(row) {
                     var scad = row.dataset.scadenza;
-                    if (!scad) return;
-                    var anniScad = (new Date(scad) - oggi) / (365.25 * 86400000);
-                    if (anniScad < 0) anniScad = 0;
+                    var indexed = row.dataset.indexed === '1';
                     var cells = row.querySelectorAll('.defl-cell');
                     if (cells.length > 0) {
                         var v = parseFloat(cells[cells.length - 1].dataset.value) || 0;
-                        totalNom += v;
-                        weightedYears += v * anniScad;
+                        if (!indexed && scad) {
+                            var anniScad = (new Date(scad) - oggi) / (365.25 * 86400000);
+                            if (anniScad < 0) anniScad = 0;
+                            totReal += v / Math.pow(1 + rate, anniScad);
+                        } else {
+                            totReal += v; // indexed: no deflation
+                        }
                     }
                 });
-                var avgYears = totalNom > 0 ? weightedYears / totalNom : 0;
-                var deflator = Math.pow(1 + rate, avgYears);
-                summaryEl.textContent = fmtCur(totVal / deflator);
+                summaryEl.textContent = fmtCur(totReal);
             } else {
-                summaryEl.textContent = fmtCur(totVal);
+                summaryEl.textContent = fmtCur(parseFloat(summaryEl.dataset.value) || 0);
             }
         }
 
         // Info text
         var infoEl = document.getElementById('inflInfoGlobal');
         if (infoEl) {
-            infoEl.textContent = useInfl ? 'Valori a scadenza deflazionati al potere d\'acquisto odierno' : '';
+            infoEl.innerHTML = useInfl
+                ? '<i class="bi bi-info-circle me-1"></i>BFP indicizzati (BFPI, BSF, BO65): valore reale &asymp; valore garantito. Ordinari/4x4: deflazionati.'
+                : '';
         }
     }
 
