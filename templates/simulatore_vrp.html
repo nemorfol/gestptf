@@ -766,6 +766,16 @@
         cfBody.innerHTML = '';
         var dataVendita = document.getElementById('vrpDataInizio').value;
         var startDate = dataVendita ? new Date(dataVendita) : null;
+        var mesiIt = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+        var ncols = 11; // total columns in the table
+
+        // Group piano months by cash flow anno
+        var pianoByAnno = {};
+        piano.forEach(function(p) {
+            if (!pianoByAnno[p.anno]) pianoByAnno[p.anno] = [];
+            pianoByAnno[p.anno].push(p);
+        });
+
         cashflow.forEach(function(c) {
             var periodo = '';
             if (startDate && c.anno > 0) {
@@ -776,9 +786,13 @@
             } else if (startDate && c.anno === 0) {
                 periodo = startDate.toLocaleDateString('it-IT');
             }
-            var spese = c.spese_notarili + c.imposta_plusvalenza + c.imposta_registro + c.imu + c.assicurazione;
+            var hasDetail = c.anno > 0 && pianoByAnno[c.anno] && pianoByAnno[c.anno].length > 0;
+            var toggleBtn = hasDetail
+                ? '<i class="bi bi-chevron-right me-1 cf-toggle" role="button" data-anno="' + c.anno + '" style="cursor:pointer;transition:transform .2s"></i>'
+                : '<span style="display:inline-block;width:16px"></span>';
+
             cfBody.innerHTML += '<tr>' +
-                '<td>' + (c.anno === 0 ? 'Anticipo' : c.anno) + '</td>' +
+                '<td>' + toggleBtn + (c.anno === 0 ? 'Anticipo' : c.anno) + '</td>' +
                 '<td class="small text-muted">' + periodo + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.entrate_rate) + '</td>' +
                 '<td class="text-end">' + PM.Fmt.currency(c.interessi_anno || 0) + '</td>' +
@@ -790,15 +804,45 @@
                 '<td class="text-end ' + colorValue(c.flusso_netto) + ' fw-bold">' + PM.Fmt.currency(c.flusso_netto) + '</td>' +
                 '<td class="text-end ' + colorValue(c.flusso_cumulato) + ' fw-bold">' + PM.Fmt.currency(c.flusso_cumulato) + '</td>' +
                 '</tr>';
+
+            // Hidden detail rows
+            if (hasDetail) {
+                pianoByAnno[c.anno].forEach(function(p) {
+                    var dataRata = '';
+                    if (startDate) {
+                        var d = new Date(startDate);
+                        d.setMonth(d.getMonth() + p.mese);
+                        dataRata = mesiIt[d.getMonth() + 1] + ' ' + d.getFullYear();
+                    }
+                    cfBody.innerHTML += '<tr class="cf-detail cf-detail-' + c.anno + ' table-light" style="display:none">' +
+                        '<td class="ps-4 small text-muted"><i class="bi bi-arrow-return-right me-1"></i>Mese ' + p.mese + '</td>' +
+                        '<td class="small text-muted">' + dataRata + '</td>' +
+                        '<td class="text-end small">' + PM.Fmt.currency(p.rata) + '</td>' +
+                        '<td class="text-end small">' + PM.Fmt.currency(p.quota_interessi) + '</td>' +
+                        '<td class="text-end small text-muted" colspan="5">' +
+                            'Capitale: ' + PM.Fmt.currency(p.quota_capitale) +
+                            ' &middot; Residuo: ' + PM.Fmt.currency(p.debito_residuo) +
+                        '</td>' +
+                        '<td colspan="2"></td>' +
+                        '</tr>';
+                });
+            }
         });
 
-        if (dtCashflow) { dtCashflow.destroy(); }
-        dtCashflow = PM.DT.init('#vrpCashflowTable', { paging: false, searching: false, info: false, ordering: false });
+        // Toggle detail rows
+        cfBody.addEventListener('click', function(e) {
+            var icon = e.target.closest('.cf-toggle');
+            if (!icon) return;
+            var anno = icon.dataset.anno;
+            var rows = cfBody.querySelectorAll('.cf-detail-' + anno);
+            var visible = rows[0] && rows[0].style.display !== 'none';
+            rows.forEach(function(r) { r.style.display = visible ? 'none' : ''; });
+            icon.style.transform = visible ? '' : 'rotate(90deg)';
+        });
 
         // --- Table: Piano Ammortamento ---
         var amBody = document.getElementById('vrpAmmortamentoBody');
         amBody.innerHTML = '';
-        var mesiIt = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
         piano.forEach(function(p) {
             var dataRata = '';
             if (startDate) {
