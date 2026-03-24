@@ -28,8 +28,27 @@
         </div>
     </div>
 
+    <!-- Inflation toggle (global) -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-2 d-flex align-items-center gap-3">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="chkInflazioneGlobal">
+                <label class="form-check-label small fw-semibold" for="chkInflazioneGlobal">
+                    <i class="bi bi-graph-down-arrow me-1"></i>Valori reali (al netto dell'inflazione)
+                </label>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <label class="small text-muted mb-0" for="txtInflazioneGlobal">Inflazione media:</label>
+                <input type="number" step="0.1" min="0" max="10" class="form-control form-control-sm"
+                       id="txtInflazioneGlobal" value="2.0" style="width:70px">
+                <span class="small text-muted">% annuo</span>
+            </div>
+            <small class="text-muted" id="inflInfoGlobal"></small>
+        </div>
+    </div>
+
     <!-- Summary cards -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" id="summaryCards">
         <div class="col-md-6 col-lg-3">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
@@ -50,7 +69,7 @@
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Valore Netto a Scadenza</p>
-                    <h5 class="mb-0 fw-bold text-success">{{ summary.totale_netto_scadenza|currency if summary else '—' }}</h5>
+                    <h5 class="mb-0 fw-bold text-success" id="summaryNettoScadenza" data-value="{{ summary.totale_netto_scadenza if summary else 0 }}">{{ summary.totale_netto_scadenza|currency if summary else '—' }}</h5>
                 </div>
             </div>
         </div>
@@ -93,14 +112,6 @@
                 <button class="btn btn-sm btn-outline-primary" id="btnCalcolaRenditaTotale">
                     <i class="bi bi-calculator me-1"></i> Calcola
                 </button>
-                <div class="vr mx-1"></div>
-                <div class="form-check form-switch mb-0">
-                    <input class="form-check-input" type="checkbox" id="chkInflazione">
-                    <label class="form-check-label small text-muted" for="chkInflazione">Valori reali</label>
-                </div>
-                <input type="number" step="0.1" min="0" max="10" class="form-control form-control-sm" id="txtInflazione"
-                       value="2.0" style="width:70px" title="Inflazione media annua %">
-                <span class="small text-muted">%</span>
             </div>
         </div>
         <div class="card-body" id="renditaTotaleBody">
@@ -133,7 +144,7 @@
                     </thead>
                     <tbody>
                         {% for bfp in records %}
-                        <tr data-id="{{ bfp.id }}">
+                        <tr data-id="{{ bfp.id }}" data-scadenza="{{ bfp.scadenza or '' }}">
                             <td>{{ bfp.tipologia }}</td>
                             <td>{{ bfp.serie }}</td>
                             <td>{{ bfp.data_sottoscrizione|date }}</td>
@@ -144,8 +155,8 @@
                             <td class="text-end {% if bfp.bollo_annuo == 0 %}text-success{% endif %}">
                                 {% if bfp.bollo_annuo == 0 %}<i class="bi bi-check-circle-fill text-success" title="Esente < 5.000€"></i> Esente{% else %}{{ bfp.bollo_annuo|currency }}{% endif %}
                             </td>
-                            <td class="text-end">{{ bfp.valore_rimborso_netto|currency }}</td>
-                            <td class="text-end">{{ bfp.valore_netto_scadenza|currency }}</td>
+                            <td class="text-end defl-cell" data-value="{{ bfp.valore_rimborso_netto or 0 }}" data-scadenza="{{ bfp.scadenza or '' }}">{{ bfp.valore_rimborso_netto|currency }}</td>
+                            <td class="text-end defl-cell" data-value="{{ bfp.valore_netto_scadenza or 0 }}" data-scadenza="{{ bfp.scadenza or '' }}">{{ bfp.valore_netto_scadenza|currency }}</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-success{% if not bfp.has_coefficienti %} disabled{% endif %}"
@@ -502,8 +513,8 @@
             var fc = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
 
             // Inflation deflator
-            var useInflation = document.getElementById('chkInflazione').checked;
-            var inflRate = parseFloat(document.getElementById('txtInflazione').value) / 100 || 0;
+            var useInflation = document.getElementById('chkInflazioneGlobal').checked;
+            var inflRate = parseFloat(document.getElementById('txtInflazioneGlobal').value) / 100 || 0;
             // Years from today to age 65
             var nascitaDate = new Date(dn);
             var oggi = new Date();
@@ -604,13 +615,79 @@
         .catch(function(err) { hideLoading(); PM.Toast.show('Errore: ' + err.message, 'error'); });
     });
 
-    // Re-calculate when inflation toggle/value changes
-    document.getElementById('chkInflazione').addEventListener('change', function() {
-        document.getElementById('btnCalcolaRenditaTotale').click();
-    });
-    document.getElementById('txtInflazione').addEventListener('change', function() {
-        if (document.getElementById('chkInflazione').checked) {
+    // --- Global inflation deflator for BFP table ---
+    var fmtCur = function(v) { return new Intl.NumberFormat('it-IT', {style:'currency', currency:'EUR'}).format(v || 0); };
+
+    function applyInflationToTable() {
+        var useInfl = document.getElementById('chkInflazioneGlobal').checked;
+        var rate = parseFloat(document.getElementById('txtInflazioneGlobal').value) / 100 || 0;
+        var oggi = new Date();
+
+        // Deflate cells in main BFP table
+        document.querySelectorAll('.defl-cell').forEach(function(cell) {
+            var val = parseFloat(cell.dataset.value) || 0;
+            var scad = cell.dataset.scadenza;
+            if (useInfl && scad) {
+                var scadDate = new Date(scad);
+                var anniAllaScad = (scadDate - oggi) / (365.25 * 86400000);
+                if (anniAllaScad < 0) anniAllaScad = 0;
+                var deflator = Math.pow(1 + rate, anniAllaScad);
+                cell.textContent = fmtCur(val / deflator).replace('€', '€');
+            } else {
+                cell.textContent = fmtCur(val).replace('€', '€');
+            }
+        });
+
+        // Deflate summary "Valore Netto a Scadenza" (weighted average ~midpoint)
+        var summaryEl = document.getElementById('summaryNettoScadenza');
+        if (summaryEl) {
+            var totVal = parseFloat(summaryEl.dataset.value) || 0;
+            if (useInfl) {
+                // Calculate weighted average years to maturity
+                var totalNom = 0, weightedYears = 0;
+                document.querySelectorAll('#bfpTable tbody tr').forEach(function(row) {
+                    var scad = row.dataset.scadenza;
+                    if (!scad) return;
+                    var anniScad = (new Date(scad) - oggi) / (365.25 * 86400000);
+                    if (anniScad < 0) anniScad = 0;
+                    var cells = row.querySelectorAll('.defl-cell');
+                    if (cells.length > 0) {
+                        var v = parseFloat(cells[cells.length - 1].dataset.value) || 0;
+                        totalNom += v;
+                        weightedYears += v * anniScad;
+                    }
+                });
+                var avgYears = totalNom > 0 ? weightedYears / totalNom : 0;
+                var deflator = Math.pow(1 + rate, avgYears);
+                summaryEl.textContent = fmtCur(totVal / deflator);
+            } else {
+                summaryEl.textContent = fmtCur(totVal);
+            }
+        }
+
+        // Info text
+        var infoEl = document.getElementById('inflInfoGlobal');
+        if (infoEl) {
+            infoEl.textContent = useInfl ? 'Valori a scadenza deflazionati al potere d\'acquisto odierno' : '';
+        }
+    }
+
+    // Global inflation toggle events
+    document.getElementById('chkInflazioneGlobal').addEventListener('change', function() {
+        applyInflationToTable();
+        // Also re-trigger rendita if already calculated
+        var body = document.getElementById('renditaTotaleBody');
+        if (body && body.querySelector('.card')) {
             document.getElementById('btnCalcolaRenditaTotale').click();
+        }
+    });
+    document.getElementById('txtInflazioneGlobal').addEventListener('change', function() {
+        if (document.getElementById('chkInflazioneGlobal').checked) {
+            applyInflationToTable();
+            var body = document.getElementById('renditaTotaleBody');
+            if (body && body.querySelector('.card')) {
+                document.getElementById('btnCalcolaRenditaTotale').click();
+            }
         }
     });
 
