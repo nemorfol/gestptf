@@ -25,7 +25,8 @@ bfp_bp = Blueprint("bfp_bp", __name__, url_prefix="/bfp")
 def index():
     """Render the BFP page with all records, riepilogo, and summary."""
     # Recalculate all BFP values to today before displaying
-    calcola_tutti_bfp()
+    data_nascita = request.args.get("data_nascita")
+    calcola_tutti_bfp(data_nascita=data_nascita)
     records_raw = get_all_bfp()
     records = [dict(r) for r in records_raw] if records_raw and not isinstance(records_raw, dict) else []
     # Calculate bollo for each BFP
@@ -165,7 +166,8 @@ def importa_pdf():
 def ricalcola():
     """Recalculate all BFP values using imported coefficients."""
     try:
-        result = calcola_tutti_bfp()
+        data_nascita = request.args.get("data_nascita") or request.json.get("data_nascita") if request.is_json else request.args.get("data_nascita")
+        result = calcola_tutti_bfp(data_nascita=data_nascita)
         if isinstance(result, dict) and "error" in result:
             return jsonify({"success": False, "error": result["error"]}), 400
         return jsonify({"success": True, "count": len(result), "data": result})

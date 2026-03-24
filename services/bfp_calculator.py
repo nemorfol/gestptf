@@ -274,18 +274,29 @@ def calcola_bollo(valore_rimborso_lordo, totale_bfp_lordo):
     return round(valore_rimborso_lordo * ALIQUOTA_BOLLO, 2)
 
 
-def calcola_tutti_bfp():
+def calcola_tutti_bfp(data_nascita=None):
     """Recalculate current values for all BFP records in the database.
 
     Updates valore_lordo_attuale, ritenuta_fiscale, valore_rimborso_netto
     for each BFP based on its serie and subscription date.
     Also updates valore_lordo_scadenza, ritenuta_scadenza, valore_netto_scadenza.
+    For BSF/BO65, uses Tabella A (age-based value at 65) if data_nascita is provided.
     Calculates bollo (stamp duty) with exemption for total < 5000€.
+
+    Args:
+        data_nascita: Birth date string (YYYY-MM-DD) for BSF/BO65 age calculation.
 
     Returns:
         list of updated BFP records, or dict with error.
     """
     try:
+        nascita = None
+        if data_nascita:
+            try:
+                nascita = _parse_date(data_nascita)
+            except Exception:
+                pass
+
         db = get_db()
         records = db.execute("SELECT * FROM bfp ORDER BY data_sottoscrizione DESC").fetchall()
         records = [dict(r) for r in records]
@@ -309,9 +320,27 @@ def calcola_tutti_bfp():
             )
 
             # Calculate maturity value
-            scadenza = calcola_valore_scadenza(
-                serie, valore_nominale, bfp["data_sottoscrizione"]
-            )
+            # BSF/BO65: use Tabella A (age-based value at 65) if birth date available
+            serie_upper = (serie or "").upper()
+            is_rendita_type = serie_upper.startswith("BO165A") or serie_upper.startswith("SF165A")
+            if is_rendita_type and nascita:
+                ds = _parse_date(bfp["data_sottoscrizione"])
+                if ds:
+                    diff_months = (ds.year - nascita.year) * 12 + (ds.month - nascita.month)
+                    if ds.day < nascita.day:
+                        diff_months -= 1
+                    eta_anni = diff_months // 12
+                    eta_mesi = diff_months % 12
+                    eta = eta_anni + 0.5 if eta_mesi >= 6 else float(eta_anni)
+                    scadenza = calcola_valore_al_65(serie, valore_nominale, eta)
+                else:
+                    scadenza = calcola_valore_scadenza(
+                        serie, valore_nominale, bfp["data_sottoscrizione"]
+                    )
+            else:
+                scadenza = calcola_valore_scadenza(
+                    serie, valore_nominale, bfp["data_sottoscrizione"]
+                )
 
             # Update record
             update_fields = {}

@@ -461,6 +461,12 @@
 {% block extra_js %}
 <script>
 (function() {
+    // Pass birth date to server for BSF/BO65 value-at-65 calculation
+    var dn = localStorage.getItem('gestptf_data_nascita');
+    if (dn && !window.location.search.includes('data_nascita=')) {
+        window.location.replace(window.location.pathname + '?data_nascita=' + encodeURIComponent(dn));
+        return;
+    }
     // --- Pie chart: Allocazione per Tipologia ---
     {% if riepilogo and riepilogo|length > 0 %}
     (function() {
@@ -879,7 +885,9 @@
     window.ricalcolaValori = function() {
         PM.confirmAction('Ricalcolare i valori di tutti i BFP usando i coefficienti importati?', function() {
             showLoading();
-            fetch('/bfp/ricalcola', { method: 'POST' })
+            var dnParam = localStorage.getItem('gestptf_data_nascita');
+            var ricalcolaUrl = '/bfp/ricalcola' + (dnParam ? '?data_nascita=' + encodeURIComponent(dnParam) : '');
+            fetch(ricalcolaUrl, { method: 'POST' })
             .then(function(resp) { return resp.json(); })
             .then(function(result) {
                 hideLoading();
