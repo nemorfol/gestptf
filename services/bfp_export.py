@@ -169,46 +169,60 @@ def export_bfp_excel(filepath, data_nascita=None):
                                 bold_fmt, money_fmt, bold_money, header_green)
 
         # =============================================
-        # SHEETS 4+: Piano Rimborso per BFP
+        # SHEETS 4+: Piano Rimborso aggregato per serie
         # =============================================
-        piano_count = 0
+        # Group BFPs by serie, summing nominal values
+        serie_groups = {}
         for rec in records:
             serie = rec.get("serie", "")
             valore_nom = float(rec.get("valore_nominale", 0) or 0)
-            ds = rec.get("data_sottoscrizione", "")
             if not serie or valore_nom <= 0:
                 continue
+            if serie not in serie_groups:
+                serie_groups[serie] = {
+                    "tipologia": rec.get("tipologia", ""),
+                    "serie": serie,
+                    "nominale_totale": 0,
+                    "num_buoni": 0,
+                    "data_sottoscrizione": rec.get("data_sottoscrizione", ""),
+                }
+            serie_groups[serie]["nominale_totale"] += valore_nom
+            serie_groups[serie]["num_buoni"] += 1
 
-            result = get_piano_rimborso(serie, valore_nom, ds)
+        sheet_count = 0
+        for serie, group in serie_groups.items():
+            nominale = round(group["nominale_totale"], 2)
+            result = get_piano_rimborso(serie, nominale, group["data_sottoscrizione"])
             if "error" in result:
                 continue
 
-            piano_count += 1
+            sheet_count += 1
             piano = result["piano"]
             riep = result["riepilogo"]
 
-            # Sheet name: max 31 chars, unique
-            sheet_name = f"{rec.get('tipologia', 'BFP')[:15]} {str(ds)[:10]}"
+            # Sheet name: tipologia abbreviata + serie
+            tipo_short = group["tipologia"][:20].replace("/", "-")
+            sheet_name = f"{tipo_short} ({group['num_buoni']})"
             sheet_name = sheet_name[:31]
-            # Ensure unique
             existing = [ws.name for ws in workbook.worksheets()]
             if sheet_name in existing:
-                sheet_name = f"{sheet_name[:28]}_{piano_count}"
+                sheet_name = f"{sheet_name[:28]}_{sheet_count}"
 
             ws = workbook.add_worksheet(sheet_name)
 
             # Header info
-            ws.write(0, 0, "Tipologia:", workbook.add_format({"bold": True}))
-            ws.write(0, 1, rec.get("tipologia", ""))
-            ws.write(1, 0, "Serie:", workbook.add_format({"bold": True}))
+            bold = workbook.add_format({"bold": True})
+            ws.write(0, 0, "Tipologia:", bold)
+            ws.write(0, 1, group["tipologia"])
+            ws.write(1, 0, "Serie:", bold)
             ws.write(1, 1, serie)
-            ws.write(2, 0, "Data Sottoscr.:", workbook.add_format({"bold": True}))
-            ws.write(2, 1, str(ds)[:10])
-            ws.write(3, 0, "Valore Nominale:", workbook.add_format({"bold": True}))
-            ws.write(3, 1, valore_nom, money_fmt)
-            ws.write(4, 0, "Val. Netto Scadenza:", workbook.add_format({"bold": True}))
+            ws.write(2, 0, "N. Buoni:", bold)
+            ws.write(2, 1, group["num_buoni"])
+            ws.write(3, 0, "Nominale Totale:", bold)
+            ws.write(3, 1, nominale, money_fmt)
+            ws.write(4, 0, "Val. Netto Scadenza:", bold)
             ws.write(4, 1, riep.get("valore_netto_scadenza", 0), money_fmt)
-            ws.write(5, 0, "Durata:", workbook.add_format({"bold": True}))
+            ws.write(5, 0, "Durata:", bold)
             ws.write(5, 1, f"{riep.get('durata_massima_anni', 0)} anni")
 
             # Piano table
@@ -260,7 +274,7 @@ def export_bfp_excel(filepath, data_nascita=None):
                     "values": [sheet_name, data_start, 7, data_end, 7],
                     "line": {"width": 1.5, "color": "#FFC000", "dash_type": "dash"},
                 })
-                chart.set_title({"name": f"Piano Rimborso - {rec.get('tipologia', '')} ({serie})"})
+                chart.set_title({"name": f"Piano Rimborso - {group['tipologia']} ({group['num_buoni']} buoni, {serie})"})
                 chart.set_x_axis({"name": "Periodo"})
                 chart.set_y_axis({"name": "EUR", "num_format": "#,##0"})
                 chart.set_size({"width": 720, "height": 400})
