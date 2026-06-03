@@ -9,6 +9,7 @@ from services.patrimonio_service import (
     get_patrimonio_totali,
     get_patrimonio_percentuali,
     get_patrimonio_variazioni,
+    get_vrp_impatto_record,
 )
 from services.simulatore_service import calcola_impatto_vrp_patrimonio, get_parametro
 from services.bfp_service import get_bfp_summary
@@ -25,14 +26,16 @@ def index():
     records = get_all_patrimonio()
     variazioni = get_patrimonio_variazioni()
 
-    # Enrich each record with computed totals and percentages
+    # Enrich each record with computed totals (VRP-adjusted) and percentages
     enriched = []
     if isinstance(records, list):
         for record in records:
-            totali = get_patrimonio_totali(record)
+            vrp_imp = get_vrp_impatto_record(record["data"])
+            totali = get_patrimonio_totali(record, vrp_imp)
             percentuali = get_patrimonio_percentuali(record)
             record["totali"] = totali if isinstance(totali, dict) and "error" not in totali else {}
             record["percentuali"] = percentuali if isinstance(percentuali, dict) and "error" not in percentuali else {}
+            record["vrp_impatto"] = vrp_imp if isinstance(vrp_imp, dict) else {}
             enriched.append(record)
 
     return render_template(

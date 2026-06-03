@@ -20,7 +20,7 @@
     {% if records|length > 0 %}
     {% set latest = records[-1] %}
     <div class="row g-3 mb-4">
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-lg-3">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Patrimonio Totale</p>
@@ -28,7 +28,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-lg-3">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Patrimonio Netto</p>
@@ -36,7 +36,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-lg-3">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Patrimonio Adj (-20% Imm.)</p>
@@ -44,6 +44,17 @@
                 </div>
             </div>
         </div>
+        {% if latest.totali and latest.totali.vrp_has %}
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 mb-4 border-start border-3 border-info">
+                <div class="card-body">
+                    <p class="text-muted mb-1 small"><i class="bi bi-house-door me-1"></i>Patrimonio + VRP</p>
+                    <h5 class="mb-0 fw-bold text-info" id="summaryConVrp">—</h5>
+                    <small class="text-muted" id="summaryVrpDelta">—</small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -54,6 +65,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
+                {% set show_vrp_cols = records|selectattr('totali.vrp_has')|list|length > 0 %}
                 <table id="patrimonioTable" class="table table-striped table-hover align-middle" style="width:100%">
                     <thead>
                         <tr>
@@ -70,6 +82,10 @@
                             <th class="text-end">Totale</th>
                             <th class="text-end">Debiti</th>
                             <th class="text-end">Netto</th>
+                            {% if show_vrp_cols %}
+                            <th class="text-end" title="Impatto VRP (Riserva di Propriet&agrave;)">&Delta; VRP</th>
+                            <th class="text-end">Netto + VRP</th>
+                            {% endif %}
                             <th class="text-end">Var. %</th>
                             <th>Azioni</th>
                         </tr>
@@ -90,11 +106,20 @@
                             <td class="text-end fw-bold">{{ p.totali.totale|currency if p.totali else '—' }}</td>
                             <td class="text-end text-danger">{{ p.debiti|currency }}</td>
                             <td class="text-end fw-bold">{{ p.totali.totale_netto|currency if p.totali else '—' }}</td>
+                            {% if show_vrp_cols %}
+                                {% if p.totali and p.totali.vrp_has %}
+                                <td class="text-end {{ 'text-success' if p.totali.vrp_delta_netto >= 0 else 'text-danger' }}">{{ p.totali.vrp_delta_netto|currency }}</td>
+                                <td class="text-end fw-bold text-info">{{ p.totali.totale_netto_con_vrp|currency }}</td>
+                                {% else %}
+                                <td class="text-end text-muted">—</td>
+                                <td class="text-end text-muted">—</td>
+                                {% endif %}
+                            {% endif %}
                             {% if loop.first %}
                             <td class="text-end text-muted">—</td>
                             {% else %}
-                            {% set netto_corrente = p.totali.totale_netto if p.totali else 0 %}
-                            {% set netto_prec = records[loop.index0 - 1].totali.totale_netto if records[loop.index0 - 1].totali else 0 %}
+                            {% set netto_corrente = p.totali.totale_netto_con_vrp if p.totali else 0 %}
+                            {% set netto_prec = records[loop.index0 - 1].totali.totale_netto_con_vrp if records[loop.index0 - 1].totali else 0 %}
                             {% if netto_prec and netto_prec > 0 %}
                             {% set var_pct = ((netto_corrente - netto_prec) / netto_prec * 100) %}
                             <td class="text-end fw-bold {{ 'text-success' if var_pct >= 0 else 'text-danger' }}">
@@ -250,6 +275,12 @@
     document.getElementById('summaryTotale').textContent = PM.Fmt.currency({{ latest.totali.totale|default(0) }});
     document.getElementById('summaryNetto').textContent = PM.Fmt.currency({{ latest.totali.totale_netto|default(0) }});
     document.getElementById('summaryAdj').textContent = PM.Fmt.currency({{ latest.totali.totale_adj|default(0) }});
+    {% if latest.totali and latest.totali.vrp_has %}
+    document.getElementById('summaryConVrp').textContent = PM.Fmt.currency({{ latest.totali.totale_netto_con_vrp|default(0) }});
+    var vrpDelta = {{ latest.totali.vrp_delta_netto|default(0) }};
+    var deltaSign = vrpDelta >= 0 ? '+' : '';
+    document.getElementById('summaryVrpDelta').textContent = 'Impatto: ' + deltaSign + PM.Fmt.currency(vrpDelta);
+    {% endif %}
     {% endif %}
 
     // DataTable
