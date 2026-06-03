@@ -1516,78 +1516,96 @@
                     <h5 class="mb-0"><i class="bi bi-1-circle me-2"></i>Come iniziare da zero</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Dalla prima esecuzione a una panoramica completa del patrimonio.</p>
+                    <p class="text-muted">Dalla prima esecuzione a una panoramica completa del patrimonio. Nessun file precedente richiesto.</p>
 
                     <ol class="list-group list-group-numbered">
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
                                 <div class="fw-bold">Avvia l'applicazione</div>
                                 Esegui <code>python app.py</code> nel terminale e apri il browser su <strong>http://127.0.0.1:5000</strong>.
+                                Il database viene creato automaticamente vuoto.
                             </div>
                             <span class="badge bg-secondary rounded-pill"><i class="bi bi-terminal"></i></span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                                <div class="fw-bold">Vai a Import / Export</div>
-                                Clicca su <i class="bi bi-arrow-left-right me-1"></i><strong>Import / Export</strong> nella barra laterale.
-                            </div>
-                            <span class="badge bg-secondary rounded-pill"><i class="bi bi-arrow-left-right"></i></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
-                                <div class="fw-bold">Importa l'Excel originale</div>
-                                Seleziona il file <code>Monitor Portafoglio.xlsx</code> e clicca
-                                <button class="btn btn-success btn-sm disabled" style="font-size:.7rem"><i class="bi bi-upload"></i> Importa</button>.
-                                Questo popola tutte le tabelle principali.
-                            </div>
-                            <span class="badge bg-success rounded-pill"><i class="bi bi-file-earmark-excel"></i></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
-                                <div class="fw-bold">Importa BFP da Excel RPOL</div>
-                                Vai a <i class="bi bi-postcard me-1"></i><strong>BFP</strong>, clicca
-                                <button class="btn btn-outline-primary btn-sm disabled" style="font-size:.7rem">
-                                    <i class="bi bi-file-earmark-excel"></i> Importa da Excel</button>
-                                e seleziona il file scaricato da poste.it.
-                            </div>
-                            <span class="badge bg-primary rounded-pill"><i class="bi bi-postcard"></i></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
-                                <div class="fw-bold">Importa Fogli Informativi PDF</div>
-                                Sempre nella sezione BFP, clicca
-                                <button class="btn btn-outline-warning btn-sm disabled" style="font-size:.7rem">
-                                    <i class="bi bi-file-earmark-pdf"></i> Importa PDF</button>
-                                e seleziona i PDF con i coefficienti CDP.
-                            </div>
-                            <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-file-earmark-pdf"></i></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
-                                <div class="fw-bold">Ricalcola Valori BFP</div>
-                                Clicca <button class="btn btn-success btn-sm disabled" style="font-size:.7rem">
-                                    <i class="bi bi-arrow-repeat"></i> Ricalcola Valori</button>
-                                per aggiornare il valore corrente di tutti i BFP.
-                            </div>
-                            <span class="badge bg-success rounded-pill"><i class="bi bi-arrow-repeat"></i></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
                                 <div class="fw-bold">Configura data di nascita</div>
                                 Vai a <i class="bi bi-gear me-1"></i><strong>Impostazioni</strong> e inserisci la tua
-                                data di nascita (necessaria per la rendita BFP).
+                                data di nascita. Serve per calcolare correttamente i BFP BSF/BO65 (rendita e valore a scadenza).
                             </div>
                             <span class="badge bg-dark rounded-pill"><i class="bi bi-gear"></i></span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
+                                <div class="fw-bold">Inserisci i tuoi asset</div>
+                                Vai nelle sezioni della barra laterale e inserisci i dati che hai:
+                                <ul class="small mb-0 mt-1">
+                                    <li><i class="bi bi-houses me-1"></i><strong>Immobili</strong> &mdash; valore stimato, indirizzo</li>
+                                    <li><i class="bi bi-piggy-bank me-1"></i><strong>Fondo Pensione</strong> &mdash; valore attuale</li>
+                                    <li><i class="bi bi-safe me-1"></i><strong>TFR</strong> &mdash; valore netto maturato</li>
+                                    <li><i class="bi bi-cash-stack me-1"></i><strong>Liquidità</strong> &mdash; cash, CD, depositi</li>
+                                    <li><i class="bi bi-graph-up-arrow me-1"></i><strong>ETF</strong> e <i class="bi bi-bank me-1"></i><strong>Obbligazioni/BTP</strong> &mdash; se ne hai</li>
+                                    <li><i class="bi bi-credit-card-2-back me-1"></i><strong>Debiti</strong> &mdash; mutui, prestiti</li>
+                                </ul>
+                            </div>
+                            <span class="badge bg-info rounded-pill"><i class="bi bi-plus-lg"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Carica i tuoi BFP da Poste</div>
+                                Vai a <i class="bi bi-postcard me-1"></i><strong>BFP</strong>. Per popolare velocemente i tuoi buoni hai 3 opzioni:
+                                <ul class="small mb-0 mt-1">
+                                    <li><strong>Importa da Excel</strong> &mdash; scarica da <code>poste.it &rarr; RPOL &rarr; Patrimonio Buoni</code> ed esporta in Excel, poi clicca
+                                        <button class="btn btn-outline-success btn-sm disabled" style="font-size:.7rem"><i class="bi bi-file-earmark-excel"></i> Importa da Excel</button>
+                                    </li>
+                                    <li><strong>Inserimento manuale</strong> &mdash; clicca
+                                        <button class="btn btn-primary btn-sm disabled" style="font-size:.7rem"><i class="bi bi-plus-lg"></i> Nuovo BFP</button>
+                                        per ogni buono
+                                    </li>
+                                </ul>
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-postcard"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Importa Fogli Informativi PDF (BFP)</div>
+                                Per ricalcolare valori attuali e a scadenza dei BFP servono i coefficienti CDP.
+                                Scarica i PDF <em>Foglio Informativo</em> da poste.it per ogni serie che possiedi,
+                                mettili in <code>pdf/bfp/</code> e clicca
+                                <button class="btn btn-outline-warning btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-file-earmark-pdf"></i> Importa Fogli Informativi (PDF)</button>.
+                                Poi clicca
+                                <button class="btn btn-outline-info btn-sm disabled" style="font-size:.7rem">
+                                    <i class="bi bi-calculator"></i> Ricalcola Valori</button>.
+                            </div>
+                            <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-file-earmark-pdf"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Crea il primo record Patrimonio</div>
+                                Vai a <i class="bi bi-wallet2 me-1"></i><strong>Patrimonio</strong>, clicca
+                                <button class="btn btn-primary btn-sm disabled" style="font-size:.7rem"><i class="bi bi-plus-lg"></i> Nuovo Record</button>:
+                                i valori "live" delle sezioni gi&agrave; compilate vengono caricati automaticamente. Conferma con
+                                <button class="btn btn-primary btn-sm disabled" style="font-size:.7rem"><i class="bi bi-check-lg"></i> Salva</button>.
+                            </div>
+                            <span class="badge bg-primary rounded-pill"><i class="bi bi-wallet2"></i></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
                                 <div class="fw-bold">Esplora la Dashboard</div>
-                                Torna alla <i class="bi bi-speedometer2 me-1"></i><strong>Dashboard</strong>
-                                per vedere il riepilogo completo del patrimonio con grafici e card.
+                                Vai alla <i class="bi bi-speedometer2 me-1"></i><strong>Dashboard</strong> per il riepilogo
+                                completo con grafici, allocazione per asset class e indicatori principali.
                             </div>
                             <span class="badge bg-primary rounded-pill"><i class="bi bi-speedometer2"></i></span>
                         </li>
                     </ol>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1"></i><strong>Hai gi&agrave; un Excel "Monitor Portafoglio"?</strong>
+                        Se hai un file Excel con la struttura specifica di questo progetto (fogli <em>ETF, BOND, Patrimonio, Investimento liquidita</em>),
+                        puoi importarlo da <i class="bi bi-arrow-left-right me-1"></i><strong>Import / Export &rarr; Excel Originale</strong>
+                        per popolare tutto in un colpo. Salta questo passaggio se non hai quel file: i passi 3-6 sopra coprono tutto manualmente.
+                    </div>
 
                     <div class="alert alert-success mt-3 mb-0">
                         <i class="bi bi-check-circle me-1"></i><strong>Fatto!</strong>

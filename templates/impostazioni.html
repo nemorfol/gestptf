@@ -34,9 +34,18 @@
                     <label for="param_{{ p.chiave }}" class="form-label small text-muted">
                         {{ p.descrizione or p.chiave }}
                     </label>
-                    {% if 'data' in p.chiave and p.valore and p.valore|length >= 10 and '-' in p.valore %}
-                    <input type="date" class="form-control param-input" id="param_{{ p.chiave }}"
-                           data-chiave="{{ p.chiave }}" value="{{ p.valore[:10] }}">
+                    {% if 'data' in p.chiave or 'nascita' in p.chiave %}
+                        {# Date field: convert DD/MM/YYYY to YYYY-MM-DD for HTML date input #}
+                        {% set v = p.valore or '' %}
+                        {% if v|length == 10 and v[2] == '/' and v[5] == '/' %}
+                            {% set iso_value = v[6:10] ~ '-' ~ v[3:5] ~ '-' ~ v[0:2] %}
+                        {% elif v|length >= 10 and v[4] == '-' %}
+                            {% set iso_value = v[:10] %}
+                        {% else %}
+                            {% set iso_value = '' %}
+                        {% endif %}
+                        <input type="date" class="form-control param-input" id="param_{{ p.chiave }}"
+                               data-chiave="{{ p.chiave }}" value="{{ iso_value }}">
                     {% else %}
                     <input type="text" class="form-control param-input" id="param_{{ p.chiave }}"
                            data-chiave="{{ p.chiave }}" value="{{ p.valore }}">
