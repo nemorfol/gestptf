@@ -61,28 +61,25 @@ def _get_coefficiente(serie, anni, semestri):
     """
     db = get_db()
 
-    # Try exact match first
-    row = db.execute(
-        """SELECT * FROM bfp_coefficienti
-           WHERE serie = ? AND tipo_tabella = 'B' AND anni = ? AND semestri = ?
-           LIMIT 1""",
-        (serie, anni, semestri),
-    ).fetchone()
+    # NOTE: there is a unit mismatch between caller and DB:
+    #   - input `semestri` is 0 or 1 (which half-year of the current year)
+    #   - DB `semestri` column stores 0 or 6 (extra months past anniversary)
+    # We compare in absolute months from subscription:
+    #   input  total_months = anni * 12 + semestri * 6
+    #   DB row total_months = anni  * 12 + semestri    (since semestri = 0 or 6)
+    input_total_months = anni * 12 + semestri * 6
 
-    if row:
-        db.close()
-        return dict(row)
-
-    # Try to find closest previous period (floor)
-    # Convert to total semesters for comparison
-    total_sem = anni * 2 + semestri
+    # Some series (e.g. Buono Ordinario) have multiple rows for the same
+    # (anni, semestri) representing bimonthly sub-periods within the semester.
+    # Among rows for a given period, pick the one with highest coeff (the most
+    # recent applicable sub-period).
     row = db.execute(
         """SELECT * FROM bfp_coefficienti
            WHERE serie = ? AND tipo_tabella = 'B'
-             AND (anni * 2 + semestri) <= ?
-           ORDER BY (anni * 2 + semestri) DESC
+             AND (anni * 12 + semestri) <= ?
+           ORDER BY (anni * 12 + semestri) DESC, coeff_lordo DESC
            LIMIT 1""",
-        (serie, total_sem),
+        (serie, input_total_months),
     ).fetchone()
 
     db.close()
@@ -93,7 +90,13 @@ def _get_coefficiente(serie, anni, semestri):
 
 
 def _get_max_coefficiente(serie):
-    """Get the maximum period coefficient for a serie (maturity value).
+    """Get the maximum coefficient for a serie (maturity value).
+
+    The PDF parser may concatenate unrelated tables (rendita, conversione,
+    etc.) under the same serie code, with anomalously low coefficients.
+    To avoid picking those, we order by coeff_lordo DESC and take the
+    actual highest revaluation, which is the legitimate maturity value
+    for accumulating BFP types.
 
     Returns:
         dict with coefficient data or None.
@@ -102,7 +105,7 @@ def _get_max_coefficiente(serie):
     row = db.execute(
         """SELECT * FROM bfp_coefficienti
            WHERE serie = ? AND tipo_tabella = 'B'
-           ORDER BY (anni * 2 + semestri) DESC
+           ORDER BY coeff_lordo DESC
            LIMIT 1""",
         (serie,),
     ).fetchone()
