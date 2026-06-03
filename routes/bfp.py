@@ -24,8 +24,10 @@ bfp_bp = Blueprint("bfp_bp", __name__, url_prefix="/bfp")
 @bfp_bp.route("/", methods=["GET"])
 def index():
     """Render the BFP page with all records, riepilogo, and summary."""
-    # Recalculate all BFP values to today before displaying
-    data_nascita = request.args.get("data_nascita")
+    # Recalculate all BFP values to today before displaying.
+    # data_nascita: query string overrides, fallback to parametri DB.
+    from services.simulatore_service import get_parametro
+    data_nascita = request.args.get("data_nascita") or get_parametro("data_nascita")
     calcola_tutti_bfp(data_nascita=data_nascita)
     records_raw = get_all_bfp()
     records = [dict(r) for r in records_raw] if records_raw and not isinstance(records_raw, dict) else []

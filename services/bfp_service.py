@@ -118,7 +118,7 @@ def get_bfp_riepilogo():
 
 
 def get_bfp_summary():
-    """Returns overall BFP totals."""
+    """Returns overall BFP totals (calculated and imported from Excel)."""
     try:
         db = get_db()
         row = db.execute(
@@ -126,6 +126,9 @@ def get_bfp_summary():
                       SUM(valore_lordo_attuale) as totale_attuale,
                       SUM(valore_rimborso_netto) as totale_rimborso_netto,
                       SUM(valore_netto_scadenza) as totale_netto_scadenza,
+                      SUM(COALESCE(imp_lordo_attuale, 0)) as totale_imp_attuale,
+                      SUM(COALESCE(imp_netto_scadenza, 0)) as totale_imp_netto_scadenza,
+                      SUM(CASE WHEN imp_lordo_attuale IS NOT NULL THEN 1 ELSE 0 END) as count_imp,
                       COUNT(*) as totale_count
                FROM bfp"""
         ).fetchone()
@@ -264,6 +267,12 @@ def import_bfp_from_excel(filepath):
             # Only insert if we have at least tipologia
             if not record.get("tipologia"):
                 continue
+
+            # Save imported values into imp_* columns so they survive recalculation
+            record["imp_lordo_attuale"] = record.get("valore_lordo_attuale")
+            record["imp_rimborso_netto"] = record.get("valore_rimborso_netto")
+            record["imp_lordo_scadenza"] = record.get("valore_lordo_scadenza")
+            record["imp_netto_scadenza"] = record.get("valore_netto_scadenza")
 
             columns = ", ".join(record.keys())
             placeholders = ", ".join(["?"] * len(record))

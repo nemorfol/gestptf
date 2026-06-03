@@ -62,6 +62,17 @@
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Valore Attuale Lordo</p>
                     <h5 class="mb-0 fw-bold">{{ summary.totale_attuale|currency if summary else '—' }}</h5>
+                    {% if summary and summary.count_imp and summary.count_imp > 0 %}
+                    <small class="text-muted d-block" title="Valore importato dall'Excel di Poste">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Excel: {{ summary.totale_imp_attuale|currency }}
+                        {% set diff_att = summary.totale_imp_attuale - summary.totale_attuale %}
+                        {% if diff_att != 0 %}
+                        <span class="{{ 'text-success' if diff_att > 0 else 'text-danger' }}">
+                            ({{ '%+.2f'|format(diff_att) }})
+                        </span>
+                        {% endif %}
+                    </small>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -70,6 +81,17 @@
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Valore Netto a Scadenza</p>
                     <h5 class="mb-0 fw-bold text-success" id="summaryNettoScadenza" data-value="{{ summary.totale_netto_scadenza if summary else 0 }}">{{ summary.totale_netto_scadenza|currency if summary else '—' }}</h5>
+                    {% if summary and summary.count_imp and summary.count_imp > 0 %}
+                    <small class="text-muted d-block" title="Valore importato dall'Excel di Poste">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Excel: {{ summary.totale_imp_netto_scadenza|currency }}
+                        {% set diff_sc = summary.totale_imp_netto_scadenza - summary.totale_netto_scadenza %}
+                        {% if diff_sc != 0 %}
+                        <span class="{{ 'text-success' if diff_sc > 0 else 'text-danger' }}">
+                            ({{ '%+.2f'|format(diff_sc) }})
+                        </span>
+                        {% endif %}
+                    </small>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -150,13 +172,35 @@
                             <td>{{ bfp.data_sottoscrizione|date }}</td>
                             <td>{{ bfp.scadenza }}</td>
                             <td class="text-end">{{ bfp.valore_nominale|currency }}</td>
-                            <td class="text-end">{{ bfp.valore_lordo_attuale|currency }}</td>
+                            <td class="text-end">
+                                {{ bfp.valore_lordo_attuale|currency }}
+                                {% if bfp.imp_lordo_attuale is not none %}
+                                    {% set diff = bfp.imp_lordo_attuale - (bfp.valore_lordo_attuale or 0) %}
+                                    {% if diff|abs > 0.01 %}
+                                    <small class="d-block text-muted" title="Valore importato dall'Excel di Poste">
+                                        <i class="bi bi-file-earmark-excel"></i> {{ bfp.imp_lordo_attuale|currency }}
+                                        <span class="{{ 'text-success' if diff > 0 else 'text-danger' }}">({{ '%+.2f'|format(diff) }})</span>
+                                    </small>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                             <td class="text-end">{{ bfp.ritenuta_fiscale|currency }}</td>
                             <td class="text-end {% if bfp.bollo_annuo == 0 %}text-success{% endif %}">
                                 {% if bfp.bollo_annuo == 0 %}<i class="bi bi-check-circle-fill text-success" title="Esente < 5.000€"></i> Esente{% else %}{{ bfp.bollo_annuo|currency }}{% endif %}
                             </td>
                             <td class="text-end defl-cell" data-value="{{ bfp.valore_rimborso_netto or 0 }}" data-scadenza="{{ bfp.scadenza or '' }}">{{ bfp.valore_rimborso_netto|currency }}</td>
-                            <td class="text-end defl-cell" data-value="{{ bfp.valore_netto_scadenza or 0 }}" data-scadenza="{{ bfp.scadenza or '' }}">{{ bfp.valore_netto_scadenza|currency }}</td>
+                            <td class="text-end defl-cell" data-value="{{ bfp.valore_netto_scadenza or 0 }}" data-scadenza="{{ bfp.scadenza or '' }}">
+                                {{ bfp.valore_netto_scadenza|currency }}
+                                {% if bfp.imp_netto_scadenza is not none %}
+                                    {% set diff_s = bfp.imp_netto_scadenza - (bfp.valore_netto_scadenza or 0) %}
+                                    {% if diff_s|abs > 0.01 %}
+                                    <small class="d-block text-muted" title="Valore importato dall'Excel di Poste">
+                                        <i class="bi bi-file-earmark-excel"></i> {{ bfp.imp_netto_scadenza|currency }}
+                                        <span class="{{ 'text-success' if diff_s > 0 else 'text-danger' }}">({{ '%+.2f'|format(diff_s) }})</span>
+                                    </small>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-success{% if not bfp.has_coefficienti %} disabled{% endif %}"

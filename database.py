@@ -133,7 +133,11 @@ def init_db():
             ritenuta_scadenza REAL DEFAULT 0,
             valore_netto_scadenza REAL DEFAULT 0,
             regolato_su TEXT,
-            note TEXT
+            note TEXT,
+            imp_lordo_attuale REAL,
+            imp_rimborso_netto REAL,
+            imp_lordo_scadenza REAL,
+            imp_netto_scadenza REAL
         );
 
         CREATE TABLE IF NOT EXISTS immobili (
@@ -296,6 +300,13 @@ def init_db():
             (chiave, valore, desc, cat)
         )
 
+    conn.commit()
+
+    # Migration: add imp_* columns to existing bfp table if missing
+    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(bfp)").fetchall()}
+    for col in ("imp_lordo_attuale", "imp_rimborso_netto", "imp_lordo_scadenza", "imp_netto_scadenza"):
+        if col not in existing_cols:
+            conn.execute(f"ALTER TABLE bfp ADD COLUMN {col} REAL")
     conn.commit()
 
     # Auto-import BFP coefficients from PDF if table is empty
