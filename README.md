@@ -1,5 +1,8 @@
 # GestPTF - Gestione Portafoglio
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
 Applicazione web per la gestione e il monitoraggio del patrimonio personale, sviluppata in Python/Flask con SQLite.
 
 ## Funzionalità
@@ -107,3 +110,21 @@ gestptf/
 - Il tema (dark/light) è persistente via localStorage
 - I BFP vengono ricalcolati automaticamente alla data odierna all'apertura della sezione
 - L'import Fineco gestisce automaticamente i cambi ISIN dei BTP (emissione -> mercato secondario)
+
+## Contributing
+
+Contributi benvenuti! Linee guida sintetiche:
+
+- **Bug fix piccoli** → apri direttamente una Pull Request su `main`, con descrizione chiara del problema e dei passi per riprodurlo.
+- **Nuove feature** → apri prima una **Issue** per discutere se rientra negli scopi del progetto, così evitiamo lavoro inutile.
+- **Stack**: Flask + SQLite + Bootstrap + Plotly.js. Nessun build tool frontend, nessun framework JS (no React/Vue/etc). Mantieni questo stile.
+- **Stile codice**: PEP 8 per Python; evita commenti ovvi (il codice deve spiegarsi da solo); niente nuovi file `.md` di documentazione non richiesti.
+- **Test locali**: avvia `python app.py` e verifica che la feature/fix funzioni nel browser prima di aprire la PR.
+- **Dati sensibili**: non includere mai nei commit database, Excel personali, screenshot con valori reali o file in `xlsbase/`, `data/`, `pdf/bfp/` (sono già in `.gitignore`).
+- **Una PR = un cambiamento logico**: per cambi multipli e indipendenti, apri PR separate.
+
+Per domande o per confrontarci prima di scrivere codice, apri una Issue.
+
+## Licenza
+
+Distribuito con licenza MIT. Vedi [LICENSE](LICENSE) per i dettagli.
