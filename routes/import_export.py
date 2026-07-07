@@ -191,6 +191,33 @@ def esporta_csv(table_name):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@import_export_bp.route("/esporta-fire-json", methods=["GET"])
+def esporta_fire_json():
+    """Esporta lo snapshot patrimoniale piu' recente nel formato
+    'patrimonio-italiano' (JSON), importabile in FIRE Planner (fire20)."""
+    try:
+        import json
+        from services.patrimonio_service import build_fire_export
+
+        data = build_fire_export()
+        if isinstance(data, dict) and "error" in data:
+            return jsonify({"success": False, "error": data["error"]}), 400
+
+        os.makedirs(EXPORT_FOLDER, exist_ok=True)
+        filepath = os.path.join(EXPORT_FOLDER, "fire_export.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        return send_file(
+            filepath,
+            mimetype="application/json",
+            as_attachment=True,
+            download_name="patrimonio-fire.json",
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @import_export_bp.route("/esporta-excel", methods=["GET"])
 def esporta_excel():
     """Export all tables as an Excel file download."""

@@ -112,6 +112,17 @@
                         </div>
                     </div>
 
+                    <!-- FIRE Planner export -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">Esporta per FIRE Planner</label>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="esportaFireJson()">
+                                <i class="bi bi-filetype-json me-1"></i> Patrimonio per FIRE Planner (JSON)
+                            </button>
+                        </div>
+                        <div class="form-text">Snapshot patrimoniale piu' recente, da importare in FIRE Planner (fire20).</div>
+                    </div>
+
                     <div id="exportResult" class="mt-auto" style="display:none;">
                         <div class="alert mb-0" id="exportAlert"></div>
                     </div>
@@ -435,6 +446,16 @@
             hideProgress();
             PM.Toast.show('Download Excel con grafici avviato', 'success');
         }, 3000);
+    };
+
+    // Export JSON per FIRE Planner (fire20)
+    window.esportaFireJson = function() {
+        showProgress('Generazione export FIRE Planner...');
+        window.location.href = '{{ url_for("import_export_bp.esporta_fire_json") }}';
+        setTimeout(function() {
+            hideProgress();
+            PM.Toast.show('Download JSON per FIRE Planner avviato', 'success');
+        }, 2000);
     };
 })();
 </script>

@@ -272,6 +272,75 @@ def get_patrimonio_totali(record, vrp_impatto=None):
         return {"error": str(e)}
 
 
+def _sum_rendita_annua():
+    """Somma le rendite annue (affitti) dichiarate sugli immobili."""
+    try:
+        db = get_db()
+        row = db.execute(
+            "SELECT COALESCE(SUM(rendita_annua), 0) AS r FROM immobili"
+        ).fetchone()
+        db.close()
+        return float(row["r"] or 0) if row else 0.0
+    except Exception:
+        return 0.0
+
+
+def build_fire_export():
+    """Costruisce l'export 'patrimonio-italiano' v1 per FIRE Planner (fire20)
+    a partire dallo snapshot piu' recente della tabella `patrimonio`.
+
+    Mappa i campi asset di GestPTF sulle chiavi PortfolioAllocation di FIRE
+    Planner: `bfp` e `cd` mappano 1:1 (FIRE Planner ha asset class dedicate).
+    Gli immobili sono aggregati in `realEstate`; il dettaglio per singolo
+    titolo/ISIN e' intenzionalmente omesso (FIRE Planner ragiona per classi).
+
+    Esporta SOLO la riga piu' recente di `patrimonio` (MAI patrimonio + tabelle
+    di dettaglio insieme, per non raddoppiare il netto).
+    """
+    latest = get_latest_patrimonio()
+    if isinstance(latest, dict) and "error" in latest:
+        return latest
+
+    def g(k):
+        return float(latest.get(k, 0) or 0)
+
+    assets = {
+        "stocks": round(g("etf"), 2),
+        "bonds": round(g("btp"), 2),
+        "bfp": round(g("bfp"), 2),
+        "cd": round(g("cd"), 2),
+        "cash": round(g("cash"), 2),
+        "realEstate": round(g("immobili_esteri") + g("immobile_italia"), 2),
+        "gold": 0,
+        "crypto": 0,
+        "pensionFund": round(g("fondo_pensione"), 2),
+        "tfr": round(g("tfr_netto"), 2),
+        "other": 0,
+    }
+
+    return {
+        "format": "patrimonio-italiano",
+        "version": 1,
+        "app": "gestptf",
+        "asOf": str(latest.get("data", ""))[:10],
+        "currency": "EUR",
+        "assets": assets,
+        "debts": round(g("debiti"), 2),
+        "rentalIncomeAnnual": round(_sum_rendita_annua(), 2),
+        "meta": {
+            "realEstateBreakdown": {
+                "italia": round(g("immobile_italia"), 2),
+                "estero": round(g("immobili_esteri"), 2),
+            },
+            "bondsBreakdown": {
+                "btp": round(g("btp"), 2),
+                "bfp": round(g("bfp"), 2),
+                "cd": round(g("cd"), 2),
+            },
+        },
+    }
+
+
 def get_patrimonio_percentuali(record):
     """Calculate % allocation for each asset class. Returns dict."""
     try:
